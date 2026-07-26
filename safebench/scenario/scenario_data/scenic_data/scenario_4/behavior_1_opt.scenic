@@ -16,11 +16,10 @@ LanePts = globalParameters.lanePts
 
 EGO_MODEL = 'vehicle.lincoln.mkz_2017'
 
-param OPT_LONG_DIST = Range(20, 40)
-param OPT_LAT_DIST = Range(2, 4)
-param OPT_SPEED = Range(10, 20)
-param OPT_TRIGGER_DIST = Range(10, 15)
-param OPT_TIME_DELAY = Range(1, 3)
+param OPT_LONG_DIST = Range(18, 28)
+param OPT_ADV_LONG_DIST = Range(30, 42)
+param OPT_LAT_DIST = Range(3.2, 3.8)
+param OPT_TRIGGER_DIST = Range(8, 18)
 
 ego = Car at EgoSpawnPt,
     with regionContainedIn None,
@@ -32,9 +31,11 @@ behavior SlowForward():
     take SetThrottleAction(0.3), SetSteerAction(0)
 
 leadingCar = Car at LeadingPt,
+    with heading LeadingPt.heading,
+    with regionContainedIn None,
     with behavior SlowForward()
 
-IntSpawnPt = OrientedPoint following roadDirection from EgoSpawnPt for (globalParameters.OPT_LONG_DIST - 5)
+IntSpawnPt = OrientedPoint following roadDirection from EgoSpawnPt for globalParameters.OPT_ADV_LONG_DIST
 
 behavior AdvBehavior():
     while ego.distanceTo(self) > globalParameters.OPT_TRIGGER_DIST:
