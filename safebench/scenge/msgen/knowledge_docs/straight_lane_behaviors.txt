@@ -1,0 +1,13 @@
+SafeBench straight-road safety-critical scenario semantics.
+
+straight_follow:
+The ego vehicle drives on a straight lane behind an adversarial leading car. The adversarial car is initially ahead in the same lane and may slow down, oscillate its speed, or brake hard when the ego closes the gap. Useful parameters include front offset, trigger distance, initial speed, target braking speed, braking duration, and recovery speed.
+
+cut_in:
+The ego vehicle drives straight while an adversarial car starts in an adjacent lane slightly ahead of the ego. When the ego approaches a trigger distance, the adversarial car changes into the ego lane and reduces speed, forcing the ego to brake or find a safe response. Useful parameters include source lane side, cut-in offset, trigger distance, cut-in target speed, and lead vehicle gap.
+
+lane_change:
+The ego vehicle is blocked by a slow leading car in its current lane. The target lane contains a front vehicle and a faster rear vehicle, making lane changing risky. Useful parameters include blocker offset, blocker speed, target-lane front gap, target-lane rear gap, and rear vehicle speed.
+
+passing:
+The ego vehicle approaches a slow leading car and attempts to pass using an adjacent lane. An adversarial car in the passing lane constrains the available gap. Useful parameters include slow-front offset, slow-front speed, passing-lane front offset, passing-lane vehicle speed, and passing gap.

@@ -1,0 +1,27 @@
+You are writing a Scenic 2.x script for CARLA and SafeBench.
+
+Scenario semantics:
+- Description: {Description}
+- AdvType: {AdvType}
+- AdvPos: {AdvPos}
+- AdvBehavior: {AdvBehavior}
+
+Use the retrieved Scenic examples and obey these constraints:
+- The output must be valid Scenic source only, inside one ```Scenic fenced block.
+- Include `model scenic.simulators.carla.model`.
+- Read externally supplied values through `globalParameters`: `town`, `spawnPt`, `yaw`, `waypoints`, and optionally `lanePts`.
+- Use SafeBench map parameters:
+  `param map = localPath(f'../maps/{{Town}}.xodr')`
+  `param carla_map = Town`
+- Define tunable `param OPT_* = Range(...)` values for longitudinal/lateral placement, speed, trigger distance, and timing.
+- Spawn ego as `ego = Car ... with blueprint EGO_MODEL`.
+- Define one adversarial car named `AdvAgent`.
+- Define adversarial behavior with a name containing `Adv`, for example `behavior AdvBehavior():`.
+- Avoid unsupported vector arithmetic such as `Vector(x, y, z)` and avoid directly adding vectors to spawn points.
+- Prefer SafeBench-compatible patterns: `OrientedPoint`, `following roadDirection from`, `left of`, `right of`, and `@` offsets.
+
+Return only:
+
+```Scenic
+full Scenic source here
+```

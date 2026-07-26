@@ -1,0 +1,22 @@
+SafeBench Scenic pattern notes.
+
+Typical file structure:
+
+model scenic.simulators.carla.model
+
+Town = globalParameters.town
+EgoSpawnPt = OrientedPoint at globalParameters.spawnPt,
+    with heading globalParameters.yaw deg
+
+param map = localPath(f'../maps/{Town}.xodr')
+param carla_map = Town
+param OPT_GEO_X_DISTANCE = Range(...)
+param OPT_GEO_Y_DISTANCE = Range(...)
+
+ego = Car at EgoSpawnPt,
+    with regionContainedIn None,
+    with blueprint EGO_MODEL
+
+Adversarial actors should be Cars and should have behavior names containing Adv so SafeBench can identify them. Prefer positions relative to an OrientedPoint following roadDirection from EgoSpawnPt. For adjacent-lane placement, use `left of` or `right of` an oriented point by a tunable lateral distance. For same-lane leading vehicles, use an OrientedPoint following roadDirection from EgoSpawnPt by a tunable longitudinal distance.
+
+Behaviors should be simple and robust: drive forward at a target speed, wait until ego is close, brake, or perform a lane insertion. Keep generated scripts conservative and compatible with Scenic 2.x.

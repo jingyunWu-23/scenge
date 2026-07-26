@@ -1,0 +1,17 @@
+You are generating a safety-critical driving scenario semantic summary for SafeBench.
+
+Base scenario category: {base_scenario}
+
+Choose one concrete scenario fitting the base category. Prefer these experimental behaviors when applicable:
+- Straight Obstacle: straight following, leading vehicle hard brake, speed oscillation, or adjacent vehicle cut-in.
+- Lane Changing: ego lane-change pressure caused by a slow blocker and target-lane front/rear vehicles.
+- Vehicle Passing: ego overtakes a slow leading vehicle while another vehicle occupies the passing lane.
+
+Return only one fenced block in exactly this format:
+
+```Text
+Description: one concise sentence describing the concrete traffic situation
+AdvType: Car
+AdvPos: concise adversarial actor placement relative to the ego vehicle
+AdvBehavior: concise adversarial behavior, such as hard brake, slow leading vehicle, cut in, block target lane, or passing-lane conflict
+```
