@@ -5,6 +5,10 @@ safebench/agent/model_ckpt/
 safebench/scenario/scenario_data/model_ckpt/
 .idea/
 *.egg-info/
+123456
+123456.pub
+id_*
+*.pem
 .DS_Store
 *.pyc
 

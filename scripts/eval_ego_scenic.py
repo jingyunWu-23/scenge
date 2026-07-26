@@ -23,6 +23,17 @@ def _parse_route_id(value: Optional[str]):
     return [int(item) for item in value.split(",") if item.strip()]
 
 
+def _parse_bool(value):
+    if isinstance(value, bool):
+        return value
+    value = value.lower()
+    if value in ("1", "true", "yes", "y", "on"):
+        return True
+    if value in ("0", "false", "no", "n", "off"):
+        return False
+    raise argparse.ArgumentTypeError(f"invalid boolean value: {value}")
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--agent_cfg", type=str, default="ppo.yaml")
@@ -37,13 +48,19 @@ def _build_parser() -> argparse.ArgumentParser:
         "--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu"
     )
 
-    parser.add_argument("--render", type=bool, default=True)
+    parser.add_argument("--render", type=_parse_bool, default=True)
     parser.add_argument("--save_video", action="store_true")
     parser.add_argument("--frame_skip", "-fs", type=int, default=1)
     parser.add_argument("--port", type=int, default=2000)
     parser.add_argument("--tm_port", type=int, default=8000)
     parser.add_argument("--fixed_delta_seconds", type=float, default=0.1)
     parser.add_argument("--max_episode_step", type=int, default=200)
+    parser.add_argument(
+        "--max-generation-attempts-per-scene",
+        type=int,
+        default=20,
+        help="Retry budget for Scenic rejection sampling per requested scene.",
+    )
     parser.add_argument("--auto_ego", action="store_true")
     parser.add_argument(
         "--route-id",
@@ -90,6 +107,9 @@ def main() -> None:
     scenario_config["scenario_id"] = args.scenario_ids
     scenario_config["route_id"] = _parse_route_id(args.route_id)
     scenario_config["eval_episodes"] = args.eval_episodes
+    scenario_config[
+        "max_generation_attempts_per_scene"
+    ] = args.max_generation_attempts_per_scene
 
     Runner = select_runner(scenario_config)
     runner = Runner(agent_config, scenario_config)

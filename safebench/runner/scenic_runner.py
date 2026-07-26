@@ -450,6 +450,10 @@ class ScenicRunner(BaseRunner):
             for config_idx, base_config in enumerate(shuffled_configs):
                 config = copy.deepcopy(base_config)
                 config.randomize_scenes = True
+                config.allow_partial_generation = True
+                config.max_generation_attempts_per_scene = int(
+                    self.scenario_config.get("max_generation_attempts_per_scene", 20)
+                )
                 config.scene_seed_base = (
                     int(self.scenario_config.get("seed", 0)) * 1000000
                     + epoch * 10000
@@ -460,6 +464,12 @@ class ScenicRunner(BaseRunner):
                 try:
                     last_town = self._setup_scenic_runtime(config, last_town)
                     data_loader = ScenicDataLoader(self.scenic, config, self.num_scenario)
+                    if len(data_loader) == 0:
+                        self.logger.log(
+                            f">> Skip {run_label}: no valid Scenic samples.",
+                            color="yellow",
+                        )
+                        continue
                     while len(data_loader) > 0:
                         sampled_scenario_configs, num_sampled_scenario = (
                             data_loader.sampler()
@@ -557,6 +567,10 @@ class ScenicRunner(BaseRunner):
             config = copy.deepcopy(config_list[config_idx])
             config.sample_num = 1
             config.randomize_scenes = True
+            config.allow_partial_generation = True
+            config.max_generation_attempts_per_scene = int(
+                self.scenario_config.get("max_generation_attempts_per_scene", 20)
+            )
             config.scene_seed_base = (
                 int(self.scenario_config.get("seed", 0)) * 1000000 + episode * 100
             )
@@ -565,6 +579,12 @@ class ScenicRunner(BaseRunner):
             try:
                 last_town = self._setup_scenic_runtime(config, last_town)
                 data_loader = ScenicDataLoader(self.scenic, config, self.num_scenario)
+                if len(data_loader) == 0:
+                    self.logger.log(
+                        f">> Skip {run_label}: no valid Scenic samples.",
+                        color="yellow",
+                    )
+                    continue
                 sampled_scenario_configs, num_sampled_scenario = data_loader.sampler()
                 assert (
                     num_sampled_scenario == 1

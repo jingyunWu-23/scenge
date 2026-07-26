@@ -165,6 +165,8 @@ class BaseRunner:
     def _init_renderer(self, num_panels=2):
         """birdeye + camera = 2 panels (lidar removed)."""
         self.logger.log(">> Initializing pygame birdeye renderer")
+        if not self.render and not os.environ.get("SDL_VIDEODRIVER"):
+            os.environ["SDL_VIDEODRIVER"] = "dummy"
         pygame.init()
         flag = pygame.HWSURFACE | pygame.DOUBLEBUF
         if not self.render:

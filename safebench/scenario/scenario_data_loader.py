@@ -12,6 +12,7 @@ import numpy as np
 import carla
 from copy import deepcopy
 import random
+from scenic.core.distributions import RejectionException
 from safebench.scenario.tools.route_manipulation import interpolate_trajectory
 
 
@@ -153,16 +154,32 @@ class ScenicDataLoader:
     def generate_scene(self, opt_time, sample_num, params=None):
         if params is not None:
             self.scenic.load_params(params)
-        seed = opt_time
+        seed_base = opt_time
         if getattr(self.config, "randomize_scenes", False):
-            seed += int(getattr(self.config, "scene_seed_base", 0))
-        random.seed(seed)
+            seed_base += int(getattr(self.config, "scene_seed_base", 0))
+        max_attempts = int(
+            getattr(self.config, "max_generation_attempts_per_scene", 20)
+        ) * max(sample_num, 1)
+        allow_partial = bool(getattr(self.config, "allow_partial_generation", False))
         scenes = []
-        while len(scenes) < sample_num:
-            scene, _ = self.scenic.generateScene()
+        attempts = 0
+        while len(scenes) < sample_num and attempts < max_attempts:
+            seed = seed_base + attempts
+            random.seed(seed)
+            np.random.seed(seed % (2**32 - 1))
+            attempts += 1
+            try:
+                scene, _ = self.scenic.generateScene()
+            except RejectionException:
+                continue
             if self.scenic.setSimulation(scene):
                 scenes.append(scene)
                 self.scenic.endSimulation()
+        if len(scenes) < sample_num and not allow_partial:
+            raise RuntimeError(
+                f"Only generated {len(scenes)}/{sample_num} Scenic scene(s) "
+                f"after {attempts} attempts."
+            )
         self.scene.extend(scenes)
 
     def reset_idx_counter(self):
@@ -170,7 +187,7 @@ class ScenicDataLoader:
             self.num_total_scenario = len(self.select_id)
             self.scenario_idx = self.select_id
         else:
-            self.num_total_scenario = self.sample_num
+            self.num_total_scenario = len(self.scene)
             self.scenario_idx = list(range(self.num_total_scenario))
 
     def train_scene(self, opt_time=0):
