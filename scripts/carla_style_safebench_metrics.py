@@ -12,6 +12,7 @@ import argparse
 import json
 import math
 from pathlib import Path
+import re
 from typing import Any
 
 import joblib
@@ -83,6 +84,13 @@ def _safe_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _records_files(input_path: Path) -> list[Path]:
     if input_path.is_file():
         return [input_path]
@@ -99,6 +107,29 @@ def _load_data_id_map(path: Path) -> dict[int, dict[str, Any]]:
     with path.open("r", encoding="utf-8") as f:
         rows = json.load(f)
     return {int(row["data_id"]): row for row in rows}
+
+
+def _metadata_from_record_key(data_id: Any, data_id_map: dict[int, dict[str, Any]]) -> dict[str, Any]:
+    try:
+        return dict(data_id_map.get(int(data_id), {}))
+    except (TypeError, ValueError):
+        pass
+
+    key = str(data_id)
+    meta: dict[str, Any] = {}
+    scenario_match = re.search(r"scenario[-_](\d+)", key)
+    route_match = re.search(r"route[-_](\d+)", key)
+    behavior_match = re.search(r"behavior[-_](\d+)", key)
+    scene_match = re.search(r"scene[-_](\d+)", key)
+    if scenario_match:
+        meta["scenario_id"] = int(scenario_match.group(1))
+    if route_match:
+        meta["route_id"] = int(route_match.group(1))
+    if behavior_match:
+        meta["behavior_id"] = int(behavior_match.group(1))
+    if scene_match:
+        meta["scene_id"] = int(scene_match.group(1))
+    return meta
 
 
 def _infer_model_label(path: Path, explicit: str | None) -> str:
@@ -148,7 +179,7 @@ def _episode_reward(sequence: list[dict[str, Any]]) -> float:
 
 
 def _episode_row(
-    data_id: int,
+    data_id: Any,
     sequence: list[dict[str, Any]],
     source_file: Path,
     data_id_map: dict[int, dict[str, Any]],
@@ -157,9 +188,9 @@ def _episode_row(
     low_speed_alpha: float,
     cruise_speed: float,
 ) -> dict[str, Any]:
-    meta = data_id_map.get(int(data_id), {})
-    scenario_id = int(meta.get("scenario_id", 0))
-    route_id = int(meta.get("route_id", -1))
+    meta = _metadata_from_record_key(data_id, data_id_map)
+    scenario_id = _safe_int(meta.get("scenario_id"), 0)
+    route_id = _safe_int(meta.get("route_id"), -1)
     scenario_name = SCENARIO_NAMES.get(scenario_id, f"scenario_{scenario_id}")
     final = sequence[-1] if sequence else {}
 
@@ -185,12 +216,15 @@ def _episode_row(
     return {
         "model_label": model_label,
         "source_file": str(source_file),
-        "data_id": int(data_id),
+        "data_id": str(data_id),
+        "numeric_data_id": _safe_int(data_id, -1),
         "scenario_id": scenario_id,
         "scenario_name": scenario_name,
         "scenario_family": scenario_name,
         "route_id": route_id,
-        "seed": int(data_id),
+        "behavior_id": meta.get("behavior_id", np.nan),
+        "scene_id": meta.get("scene_id", np.nan),
+        "seed": str(data_id),
         "steps": int(len(sequence)),
         "elapsed_time_s": float(elapsed_time_s),
         "route_length": float(route_length),
@@ -296,7 +330,7 @@ def build_rows(args: argparse.Namespace) -> list[dict[str, Any]]:
                 continue
             rows.append(
                 _episode_row(
-                    int(data_id),
+                    data_id,
                     sequence,
                     record_file,
                     data_id_map,
