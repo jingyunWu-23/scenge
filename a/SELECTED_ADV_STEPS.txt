@@ -1,0 +1,11 @@
+Selected adversarial checkpoint steps:
+8950
+9730
+10590
+12060
+12200
+13380
+14930
+15530
+16500
+17410

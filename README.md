@@ -137,10 +137,9 @@ done
 
 ### CARLA Evolution migrated tests
 
-`scripts/eval_carla_evolution.py` calls the existing modules under
-`/home/chenyuanwan/download/co-training/code-migration/模型/carla_evolution`
-without copying MAPPO or environment code into ScenGE. It covers the two
-migrated experiments described in `自然车与对抗车测试场景迁移说明.md`.
+`scripts/eval_carla_evolution.py` calls the migrated CARLA Evolution modules
+under `a/`. It covers the two migrated experiments described in
+`自然车与对抗车测试场景迁移说明.md`.
 
 Normal natural-vehicle evaluation uses CARLA TrafficManager by default:
 

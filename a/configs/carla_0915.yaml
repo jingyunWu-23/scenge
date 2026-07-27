@@ -1,0 +1,152 @@
+carla:
+  backend: carla
+  host: 127.0.0.1
+  port: 2000
+  timeout: 60.0
+  tick_retries: 3
+  town: Town04
+  fixed_delta_seconds: 0.05
+  synchronous_mode: true
+  no_rendering_mode: true
+  vehicle_filter: vehicle.*
+  spectator_follow: true
+  spectator_distance: 18.0
+  spectator_height: 8.0
+  spectator_pitch: -25.0
+
+scenario:
+  route_name: merge_smoke
+  max_episode_steps: 200
+  route_length: 200.0
+  completion_horizon_mode: time_budget
+  completion_target_speed: 18.0
+  completion_time_budget_ratio: 1.1
+  completion_min_distance: 50.0
+  route_sample_distance: 2.0
+  route_backtrack_distance: 100.0
+  traffic_density: 1
+  num_cav: 3
+  num_hdv: 0
+  num_background: 0
+  spawn_strategy: relative_route
+  spawn_start_index: 0
+  spawn_z_offset: 0.5
+  randomize_scenarios: true
+  relative_offset_jitter: 5.0
+  randomize_spawn_start_index: false
+  shuffle_spawn_points: false
+  tick_after_spawn: true
+  adv_offsets: [0.0, 20.0, 30.0]
+  adv_lane_offsets: [0, 1, 2]
+  ego_offset: 10.0
+  ego_lane_offset: 2
+  hdv_offsets: [80.0, 100.0, 120.0]
+  hdv_lane_offsets: [0, 1, 2]
+  background_offsets: [45.0, 75.0]
+  background_lane_offsets: [0, 3]
+
+control:
+  keep_lane_throttle: 0.35
+  accelerate_throttle: 1.0
+  decelerate_brake: 0.55
+  lane_change_throttle: 0.45
+  lane_change_steer: 0.35
+  use_high_level_intent: true
+  max_lane_change_steps: 25
+  lane_change_cooldown_steps: 20
+  failed_lane_change_cooldown: 10
+  ego_lanechange_trigger_gap: 30.0
+  ego_lanechange_min_gap_gain: 8.0
+  lookahead_distance: 8.0
+  lane_finish_threshold: 0.3
+  ego_min_lanechange_gap_front: 15.0
+  ego_min_lanechange_gap_rear: 10.0
+  adv_min_lanechange_gap_front: 12.0
+  adv_min_lanechange_gap_rear: 9.0
+  target_speed_min: 2.0
+  target_speed_max: 28.0
+  target_speed_cruise: 18.0
+  target_speed_recovery: 0.12
+  ego_clear_path_recovery_speed: 8.0
+  ego_clear_path_recovery_trigger_speed: 4.0
+  ego_clear_path_front_gap: 25.0
+  ego_clear_path_obstacle_risk: 0.10
+  ego_clear_path_recovery_during_lane_change: true
+  ego_front_safety_distance: 22.0
+  ego_front_time_headway: 1.5
+  ego_front_light_brake_gap: 12.0
+  ego_front_light_brake: 0.20
+  ego_front_emergency_gap: 8.0
+  ego_front_emergency_brake: 0.45
+  enable_static_obstacle_awareness: true
+  static_obstacle_labels: [Poles, TrafficLight, TrafficSigns]
+  ego_obstacle_lookahead_distance: 30.0
+  ego_obstacle_lateral_tolerance: 1.2
+  ego_obstacle_lateral_risk_power: 2.0
+  ego_obstacle_safety_risk_threshold: 0.15
+  ego_obstacle_time_headway: 2.0
+  ego_obstacle_emergency_distance: 8.0
+  ego_obstacle_critical_distance: 3.0
+  ego_obstacle_stop_distance: 1.2
+  ego_obstacle_min_pass_speed: 8.0
+  ego_obstacle_escape_min_speed: 6.0
+  ego_obstacle_avoidance_distance: 28.0
+  ego_obstacle_escape_risk_margin: 0.05
+  ego_obstacle_takeover_enabled: true
+  ego_obstacle_takeover_distance: 28.0
+  ego_obstacle_takeover_clear_risk: 0.10
+  ego_obstacle_takeover_clear_steps: 8
+  ego_obstacle_takeover_max_steps: 80
+  ego_obstacle_takeover_lookahead: 10.0
+  ego_obstacle_takeover_steer_gain: 1.35
+  ego_obstacle_takeover_max_steer: 0.65
+  ego_obstacle_escape_max_route_heading_error_deg: 25.0
+  ego_obstacle_escape_max_route_lateral: 8.0
+  ego_obstacle_escape_route_check_lookahead: 8.0
+  ego_route_takeover_enabled: true
+  ego_route_future_heading_lookahead: 25.0
+  ego_route_lane_mismatch_threshold_deg: 15.0
+  ego_route_lane_improvement_margin_deg: 10.0
+  ego_obstacle_light_brake: 0.08
+  ego_obstacle_emergency_brake: 0.35
+  ego_lane_obstacle_veto_risk: 0.45
+  ego_lane_obstacle_risk_margin: 0.10
+  ego_cancel_lane_change_obstacle_risk: 0.15
+  ego_cancel_lane_change_obstacle_distance: 28.0
+  ego_obstacle_cancel_cooldown: 8
+  adv_front_safety_distance: 14.0
+  adv_front_time_headway: 0.8
+  adv_front_light_brake_gap: 8.0
+  adv_front_light_brake: 0.12
+  adv_front_emergency_gap: 5.0
+  adv_front_emergency_brake: 0.30
+  collision_contact_clear_steps: 8
+  collision_recovery_brake_steps: 3
+  collision_recovery_throttle: 0.35
+  collision_recovery_reverse_throttle: 0.25
+  collision_recovery_steer: 0.18
+  collision_recovery_clearance: 6.0
+  delta_v: 2.0
+  lateral_kp: 0.12
+  heading_kp: 0.8
+  speed_kp: 0.08
+  brake_kp: 0.12
+  max_steer: 0.45
+
+reward:
+  ego_crash_vehicle_penalty: 20.0
+  ego_crash_object_penalty: 20.0
+  ego_obstacle_penalty_weight: 2.0
+  ego_obstacle_escape_bonus: 0.5
+  ego_obstacle_escape_threshold: 0.25
+  ego_obstacle_escape_margin: 0.10
+  ego_obstacle_recovery_bonus: 0.6
+  ego_obstacle_recovery_speed: 4.0
+  ego_obstacle_recovery_low_speed: 3.0
+  ego_obstacle_recovery_risk_threshold: 0.15
+  ego_obstacle_recovery_clear_risk: 0.10
+  ego_obstacle_recovery_cooldown: 15
+  ego_obstacle_takeover_penalty: 0.02
+  ego_obstacle_takeover_release_bonus: 0.3
+  ego_hazardous_lane_change_penalty: 1.0
+  ego_hazardous_lane_change_risk_threshold: 0.25

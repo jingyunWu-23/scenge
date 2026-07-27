@@ -29,9 +29,7 @@ from typing import Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CARLA_EVOLUTION_ROOT = Path(
-    "/home/chenyuanwan/download/co-training/code-migration/模型/carla_evolution"
-)
+DEFAULT_CARLA_EVOLUTION_ROOT = REPO_ROOT / "a"
 DEFAULT_ADV_RUN = "joint_Jul_01_14_59_59"
 DEFAULT_ADV_ROUND_LAST = 60
 DEFAULT_ADV_SAMPLE_COUNT = 10
@@ -171,7 +169,7 @@ def _base_env(args: argparse.Namespace, root: Path) -> dict[str, str]:
 
 
 def _target_command(args: argparse.Namespace, root: Path, script_path: Path) -> list[str]:
-    if args.ego_adapter == "native":
+    if args.ego_adapter == "native" and root.name == "carla_evolution":
         return [sys.executable, str(script_path)]
     return [
         sys.executable,
@@ -180,6 +178,8 @@ def _target_command(args: argparse.Namespace, root: Path, script_path: Path) -> 
         str(root),
         "--target-script",
         str(script_path),
+        "--ego-adapter",
+        args.ego_adapter,
         "--",
     ]
 
