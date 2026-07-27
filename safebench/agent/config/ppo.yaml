@@ -20,8 +20,8 @@ epochs: 400
 exp_name: null
 # data dir to save the logger files
 data_dir: 'output'
-load_dir: 'safebench/agent/model_ckpt/safe_rl/ppo_0/model_save/model.pt'
-pretrain_dir: 'safebench/agent/model_ckpt/safe_rl/ppo_0/model_save/model.pt' # 用于加载已经预训练好的模型，如果没有可以填null
+load_dir: '/root/scenge/safebench/agent/model_ckpt/safe_rl/ppo_scenge_mixed_ego/model_save/model.sac.0050.torch'
+pretrain_dir: '/root/scenge/safebench/agent/model_ckpt/safe_rl/ppo_scenge_mixed_ego/model_save/model.sac.0050.torch' # 用于加载已经预训练好的模型，如果没有可以填null
 load_iteration: null
 
 ###################### worker configs ######################
