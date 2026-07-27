@@ -106,6 +106,11 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional pretrained PPO .pt/.torch file, or null.",
     )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from the latest checkpoint in --load-dir.",
+    )
     return parser
 
 
@@ -166,6 +171,7 @@ def main() -> None:
     ] = args.max_generation_attempts_per_scene
     if args.load_dir is not None:
         agent_config["load_dir"] = args.load_dir
+    agent_config["resume_training"] = args.resume
     if args.pretrain_dir is not None:
         agent_config["pretrain_dir"] = None if args.pretrain_dir == "null" else args.pretrain_dir
 

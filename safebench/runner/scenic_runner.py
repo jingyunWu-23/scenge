@@ -433,6 +433,20 @@ class ScenicRunner(BaseRunner):
         self.agent_policy.set_mode("train")
         self.scenario_policy.set_mode("eval")
         train_episode = int(self.agent_config["train_episode"])
+        start_epoch = 0
+        if self.agent_config.get("resume_training", False):
+            self.agent_policy.load_model()
+            start_epoch = self.agent_policy.continue_episode
+            if start_epoch > 0:
+                self.logger.log(
+                    f">> Resume PPO ego training from epoch {start_epoch}.",
+                    color="yellow",
+                )
+            else:
+                self.logger.log(
+                    ">> No previous PPO checkpoint found. Training from scratch.",
+                    color="yellow",
+                )
         last_town = None
 
         self.logger.log(
@@ -440,7 +454,7 @@ class ScenicRunner(BaseRunner):
             color="yellow",
         )
 
-        for epoch in range(1, train_episode + 1):
+        for epoch in range(start_epoch + 1, train_episode + 1):
             shuffled_configs = list(config_list)
             np.random.shuffle(shuffled_configs)
             epoch_rewards = []
