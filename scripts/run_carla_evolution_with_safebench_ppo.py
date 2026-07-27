@@ -37,10 +37,11 @@ def main() -> None:
     if args.ego_adapter == "safebench-ppo":
         from safebench.scenge.carla_evolution_ego_adapter import SafeBenchPPOToDiscreteAdapter
 
-        original_runtime_imports = finetune.runtime_imports
-
         def patched_runtime_imports():
-            train_mod, MAPPOAgent, _EgoPPOAdapter, make_env = original_runtime_imports()
+            from carla_evolution.agents.mappo import MAPPOAgent
+            from carla_evolution.envs.factory import make_env
+            from carla_evolution.training import train as train_mod
+
             return train_mod, MAPPOAgent, SafeBenchPPOToDiscreteAdapter, make_env
 
         finetune.runtime_imports = patched_runtime_imports
