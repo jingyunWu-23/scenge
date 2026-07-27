@@ -356,6 +356,65 @@ def run_adv_sweep(args: argparse.Namespace) -> None:
     _run(cmd, root, _base_env(args, root), args.dry_run)
 
 
+def run_safebench_lc(args: argparse.Namespace) -> None:
+    root, _ = _target_root_and_config(args)
+    script_path = root / "tests" / "scripts" / "run_safebench_lc_ego_sweep_eval.py"
+    missing = [
+        path
+        for path in (
+            root,
+            script_path,
+            root / "tests" / "configs" / "adv_init_state.json",
+            root / "tests" / "envs" / "scene_state.py",
+            root / "tests" / "scenarios" / "templates" / "straight_follow.py",
+        )
+        if not path.exists()
+    ]
+    if missing:
+        formatted = "\n  ".join(str(path) for path in missing)
+        raise SystemExit(f"Missing required SafeBench LC test files:\n  {formatted}")
+
+    scenario_type_json = Path(args.scenario_type_json).expanduser()
+    if not scenario_type_json.is_absolute():
+        scenario_type_json = root / scenario_type_json
+    ego_checkpoint = _checkpoint_arg(args, args.ego_checkpoint)
+    cmd = [
+        *_target_command(args, root, script_path),
+        "--training-ego-checkpoint",
+        ego_checkpoint,
+        "--training-ego-label",
+        args.model_label,
+        "--finetune-ego-checkpoints",
+        "none",
+        "--scenario-type-json",
+        str(scenario_type_json),
+        "--scenario-ids",
+        args.scenario_ids,
+        "--route-ids",
+        args.route_ids,
+        "--max-routes-per-scenario",
+        str(args.max_routes_per_scenario),
+        "--max-inits-per-route",
+        str(args.max_inits_per_route),
+        "--max-steps",
+        str(args.max_steps),
+        "--route-length",
+        str(args.route_length),
+        "--dt",
+        str(args.dt),
+        "--seed",
+        str(args.seed),
+        "--target-speed",
+        str(args.target_speed),
+        "--output-dir",
+        _output_dir_arg(args.output_dir),
+    ]
+    _append_flag(cmd, "--no-cuda", args.no_cuda)
+    _append_flag(cmd, "--render", args.render)
+    _append_flag(cmd, "--dry-run", args.dry_run_lc)
+    _run(cmd, root, _base_env(args, root), args.dry_run)
+
+
 def _add_shared_root_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--carla-evolution-root", default=str(DEFAULT_CARLA_EVOLUTION_ROOT))
     parser.add_argument("--backend", choices=["mock", "carla"], default="carla")
@@ -478,6 +537,33 @@ def build_parser() -> argparse.ArgumentParser:
         default="results/ego_adv_frozen_eval/scenge_adv10_sweep_random_pos_lane",
     )
     sweep.set_defaults(func=run_adv_sweep)
+
+    safebench_lc = subparsers.add_parser(
+        "safebench-lc",
+        help="Evaluate one SafeBench PPO ego checkpoint on the four SafeBench LC template scenarios.",
+    )
+    _add_shared_root_args(safebench_lc)
+    safebench_lc.set_defaults(ego_adapter="safebench-ppo")
+    safebench_lc.add_argument("--ego-checkpoint", required=True)
+    safebench_lc.add_argument("--model-label", default="SafeBench-PPO")
+    safebench_lc.add_argument("--scenario-type-json", default="tests/configs/adv_init_state.json")
+    safebench_lc.add_argument("--scenario-ids", default="1,2,3,4")
+    safebench_lc.add_argument("--route-ids", default="")
+    safebench_lc.add_argument("--max-routes-per-scenario", type=int, default=0)
+    safebench_lc.add_argument("--max-inits-per-route", type=int, default=10)
+    safebench_lc.add_argument("--max-steps", type=int, default=200)
+    safebench_lc.add_argument("--route-length", type=float, default=200.0)
+    safebench_lc.add_argument("--dt", type=float, default=0.05)
+    safebench_lc.add_argument("--seed", type=int, default=669)
+    safebench_lc.add_argument("--target-speed", type=float, default=18.0)
+    safebench_lc.add_argument("--render", action="store_true")
+    safebench_lc.add_argument("--no-cuda", action="store_true")
+    safebench_lc.add_argument("--dry-run-lc", action="store_true")
+    safebench_lc.add_argument(
+        "--output-dir",
+        default="results/safebench_lc_4scenes/ppo_torch",
+    )
+    safebench_lc.set_defaults(func=run_safebench_lc)
     return parser
 
 
