@@ -107,6 +107,29 @@ def _adapt_checkpoint_dir(path: str | Path) -> str:
     return str(link_dir)
 
 
+def _checkpoint_dir_from_checkpoints(paths: Sequence[str] | None) -> str | None:
+    checkpoints = [Path(path).expanduser().resolve() for path in (paths or ())]
+    torch_files = [path for path in checkpoints if path.suffix == ".torch"]
+    if not torch_files:
+        return None
+    link_dir = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter" / "explicit_checkpoints"
+    link_dir.mkdir(parents=True, exist_ok=True)
+    for source in torch_files:
+        _adapt_checkpoint_path(source)
+        digest = int(hashlib.sha1(str(source).encode("utf-8")).hexdigest()[:12], 16)
+        link = link_dir / f"checkpoint-{digest}.pt"
+        target = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter" / f"checkpoint-{digest}.pt"
+        if link.exists() or link.is_symlink():
+            if link.resolve() != target.resolve():
+                link.unlink()
+        if not link.exists():
+            try:
+                link.symlink_to(target)
+            except FileExistsError:
+                pass
+    return str(link_dir)
+
+
 def _checkpoint_arg(args: argparse.Namespace, path: str | Path) -> str:
     if args.ego_adapter == "safebench-ppo":
         return _adapt_checkpoint_path(path)
@@ -247,8 +270,11 @@ def run_normal(args: argparse.Namespace) -> None:
         "--hdv-tm-distance-to-leading-vehicle",
         str(args.hdv_tm_distance_to_leading_vehicle),
     ]
-    if args.ego_dir:
-        cmd.extend(["--ego-dir", _path(args.ego_dir)])
+    ego_dir = _checkpoint_dir_arg(args, args.ego_dir) if args.ego_dir else None
+    if args.ego_adapter == "safebench-ppo" and not ego_dir:
+        ego_dir = _checkpoint_dir_from_checkpoints(args.ego_checkpoint)
+    if ego_dir:
+        cmd.extend(["--ego-dir", ego_dir])
     for checkpoint in args.ego_checkpoint or ():
         cmd.extend(["--ego-checkpoint", _checkpoint_arg(args, checkpoint)])
     if args.output_dir:
