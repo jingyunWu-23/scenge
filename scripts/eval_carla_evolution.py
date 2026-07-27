@@ -23,6 +23,7 @@ import argparse
 import hashlib
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 from typing import Sequence
@@ -66,21 +67,16 @@ def _append_repeat(cmd: list[str], flag: str, values: Sequence[str] | None) -> N
 
 def _adapt_checkpoint_path(path: str | Path) -> str:
     source = Path(path).expanduser().resolve()
+    if not source.is_file():
+        raise FileNotFoundError(f"Ego checkpoint not found: {source}")
     if source.suffix != ".torch":
         return str(source)
-    link_dir = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter"
-    link_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter"
+    cache_dir.mkdir(parents=True, exist_ok=True)
     digest = int(hashlib.sha1(str(source).encode("utf-8")).hexdigest()[:12], 16)
-    link = link_dir / f"checkpoint-{digest}.pt"
-    if link.exists() or link.is_symlink():
-        if link.resolve() != source:
-            link.unlink()
-    if not link.exists():
-        try:
-            link.symlink_to(source)
-        except FileExistsError:
-            pass
-    return str(link)
+    target = cache_dir / f"checkpoint-{digest}.pt"
+    _copy_checkpoint(source, target)
+    return str(target)
 
 
 def _adapt_checkpoint_dir(path: str | Path) -> str:
@@ -90,21 +86,14 @@ def _adapt_checkpoint_dir(path: str | Path) -> str:
     torch_files = sorted(source_dir.glob("*.torch"))
     if not torch_files:
         return str(source_dir)
-    link_dir = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter" / source_dir.name
-    link_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter" / source_dir.name
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    _remove_checkpoint_symlinks(cache_dir)
     for index, source in enumerate(torch_files):
         digest = int(hashlib.sha1(str(source).encode("utf-8")).hexdigest()[:8], 16)
         step = index * 100000 + digest % 100000
-        link = link_dir / f"checkpoint-{step}.pt"
-        if link.exists() or link.is_symlink():
-            if link.resolve() != source:
-                link.unlink()
-        if not link.exists():
-            try:
-                link.symlink_to(source)
-            except FileExistsError:
-                pass
-    return str(link_dir)
+        _copy_checkpoint(source, cache_dir / f"checkpoint-{step}.pt")
+    return str(cache_dir)
 
 
 def _checkpoint_dir_from_checkpoints(paths: Sequence[str] | None) -> str | None:
@@ -112,20 +101,38 @@ def _checkpoint_dir_from_checkpoints(paths: Sequence[str] | None) -> str | None:
     torch_files = [path for path in checkpoints if path.suffix == ".torch"]
     if not torch_files:
         return None
-    link_dir = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter" / "explicit_checkpoints"
-    link_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter" / "explicit_checkpoints"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    _clear_checkpoint_files(cache_dir)
     for source in torch_files:
+        if not source.is_file():
+            raise FileNotFoundError(f"Ego checkpoint not found: {source}")
         digest = int(hashlib.sha1(str(source).encode("utf-8")).hexdigest()[:12], 16)
-        link = link_dir / f"checkpoint-{digest}.pt"
-        if link.exists() or link.is_symlink():
-            if link.resolve() != source:
-                link.unlink()
-        if not link.exists():
-            try:
-                link.symlink_to(source)
-            except FileExistsError:
-                pass
-    return str(link_dir)
+        _copy_checkpoint(source, cache_dir / f"checkpoint-{digest}.pt")
+    return str(cache_dir)
+
+
+def _copy_checkpoint(source: Path, target: Path) -> None:
+    if target.is_symlink():
+        target.unlink()
+    if target.exists():
+        same_size = target.stat().st_size == source.stat().st_size
+        same_mtime = int(target.stat().st_mtime) == int(source.stat().st_mtime)
+        if same_size and same_mtime:
+            return
+        target.unlink()
+    shutil.copy2(source, target)
+
+
+def _remove_checkpoint_symlinks(directory: Path) -> None:
+    for path in directory.glob("checkpoint-*.pt"):
+        if path.is_symlink():
+            path.unlink()
+
+
+def _clear_checkpoint_files(directory: Path) -> None:
+    for path in directory.glob("checkpoint-*.pt"):
+        path.unlink()
 
 
 def _checkpoint_arg(args: argparse.Namespace, path: str | Path) -> str:
