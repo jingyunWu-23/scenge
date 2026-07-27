@@ -135,6 +135,52 @@ for ego in sac ppo td3; do
 done
 ```
 
+### CARLA Evolution migrated tests
+
+`scripts/eval_carla_evolution.py` calls the existing modules under
+`/home/chenyuanwan/download/co-training/code-migration/模型/carla_evolution`
+without copying MAPPO or environment code into ScenGE. It covers the two
+migrated experiments described in `自然车与对抗车测试场景迁移说明.md`.
+
+Normal natural-vehicle evaluation uses CARLA TrafficManager by default:
+
+```bash
+python scripts/eval_carla_evolution.py normal \
+    --ego-checkpoint /path/to/ego/checkpoint.pt
+```
+
+Frozen adversarial evaluation loads the trained MAPPO adversary pool from
+`results/joint_Jul_01_14_59_59/models/adv` and reproduces the documented
+10-checkpoint sampling setup:
+
+```bash
+python scripts/eval_carla_evolution.py adv \
+    --ego-checkpoint /path/to/ego/checkpoint.pt
+```
+
+For a directory of ego checkpoints:
+
+```bash
+python scripts/eval_carla_evolution.py adv-sweep \
+    --ego-dir /path/to/ego/checkpoint_dir --include-final --label-with-source
+```
+
+Use `--dry-run` to print the underlying `carla_evolution` command without
+starting CARLA evaluation.
+
+To report SafeBench four-template evaluation with the same core metric names
+and mean/variance tables used by the migrated CARLA Evolution tests:
+
+```bash
+python scripts/carla_style_safebench_metrics.py \
+    --input log/eval/ppo/scenario_1/.../eval_results \
+    --output-dir results/safebench_ppo_carla_style_metrics
+```
+
+New SafeBench runs also write per-step `ego_reward` into `records.pkl`, so the
+post-processor can fill `episode_reward`. Older records can still be processed,
+but `episode_reward` will be empty.
+
 ---
 
 ## Pre-trained ego policies

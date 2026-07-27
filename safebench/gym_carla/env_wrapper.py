@@ -128,6 +128,10 @@ class VectorWrapper:
             if not self.finished_env[e_i]:
                 current_env = self.env_list[e_i]
                 obs, reward, done, info = current_env.step_after_tick()
+                if current_env.scenario_manager.running_record:
+                    current_env.scenario_manager.running_record[-1][
+                        "ego_reward"
+                    ] = float(reward)
 
                 if info.get("collision") and current_env.scenario_manager.running_record:
                     current_env.scenario_manager.running_record[-1][
