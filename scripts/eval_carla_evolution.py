@@ -20,6 +20,7 @@ Examples:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -56,6 +57,61 @@ def _append_flag(cmd: list[str], flag: str, enabled: bool) -> None:
 def _append_repeat(cmd: list[str], flag: str, values: Sequence[str] | None) -> None:
     for value in values or ():
         cmd.extend([flag, value])
+
+
+def _adapt_checkpoint_path(path: str | Path) -> str:
+    source = Path(path).expanduser().resolve()
+    if source.suffix != ".torch":
+        return str(source)
+    link_dir = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter"
+    link_dir.mkdir(parents=True, exist_ok=True)
+    digest = int(hashlib.sha1(str(source).encode("utf-8")).hexdigest()[:12], 16)
+    link = link_dir / f"checkpoint-{digest}.pt"
+    if link.exists() or link.is_symlink():
+        if link.resolve() != source:
+            link.unlink()
+    if not link.exists():
+        try:
+            link.symlink_to(source)
+        except FileExistsError:
+            pass
+    return str(link)
+
+
+def _adapt_checkpoint_dir(path: str | Path) -> str:
+    source_dir = Path(path).expanduser().resolve()
+    if list(source_dir.glob("checkpoint-*.pt")):
+        return str(source_dir)
+    torch_files = sorted(source_dir.glob("*.torch"))
+    if not torch_files:
+        return str(source_dir)
+    link_dir = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter" / source_dir.name
+    link_dir.mkdir(parents=True, exist_ok=True)
+    for index, source in enumerate(torch_files):
+        digest = int(hashlib.sha1(str(source).encode("utf-8")).hexdigest()[:8], 16)
+        step = index * 100000 + digest % 100000
+        link = link_dir / f"checkpoint-{step}.pt"
+        if link.exists() or link.is_symlink():
+            if link.resolve() != source:
+                link.unlink()
+        if not link.exists():
+            try:
+                link.symlink_to(source)
+            except FileExistsError:
+                pass
+    return str(link_dir)
+
+
+def _checkpoint_arg(args: argparse.Namespace, path: str | Path) -> str:
+    if args.ego_adapter == "safebench-ppo":
+        return _adapt_checkpoint_path(path)
+    return _path(path)
+
+
+def _checkpoint_dir_arg(args: argparse.Namespace, path: str | Path) -> str:
+    if args.ego_adapter == "safebench-ppo":
+        return _adapt_checkpoint_dir(path)
+    return _path(path)
 
 
 def _target_root_and_config(args: argparse.Namespace) -> tuple[Path, Path]:
@@ -105,7 +161,27 @@ def _base_env(args: argparse.Namespace, root: Path) -> dict[str, str]:
     env["PYTHONPATH"] = os.pathsep.join(pythonpath)
     if getattr(args, "cuda_visible_devices", None):
         env["CUDA_VISIBLE_DEVICES"] = args.cuda_visible_devices
+    env["SCENGE_ROOT"] = str(REPO_ROOT)
+    env["SAFEBENCH_EGO_AGENT_CFG"] = str(args.safebench_agent_cfg)
+    if args.safebench_obs_indices:
+        env["SAFEBENCH_EGO_OBS_INDICES"] = str(args.safebench_obs_indices)
+    env["SAFEBENCH_EGO_STEER_THRESHOLD"] = str(args.safebench_steer_threshold)
+    env["SAFEBENCH_EGO_ACC_THRESHOLD"] = str(args.safebench_acc_threshold)
     return env
+
+
+def _target_command(args: argparse.Namespace, root: Path, script_path: Path) -> list[str]:
+    if args.ego_adapter == "native":
+        return [sys.executable, str(script_path)]
+    return [
+        sys.executable,
+        str(REPO_ROOT / "scripts" / "run_carla_evolution_with_safebench_ppo.py"),
+        "--carla-evolution-root",
+        str(root),
+        "--target-script",
+        str(script_path),
+        "--",
+    ]
 
 
 def _append_common_scene_args(cmd: list[str], args: argparse.Namespace) -> None:
@@ -146,8 +222,7 @@ def run_normal(args: argparse.Namespace) -> None:
     root, config = _target_root_and_config(args)
     script_path = _validate_target(root, "run_ego_natural_seed_eval.py")
     cmd = [
-        sys.executable,
-        str(script_path),
+        *_target_command(args, root, script_path),
         "--backend",
         args.backend,
         "--config",
@@ -167,7 +242,8 @@ def run_normal(args: argparse.Namespace) -> None:
     ]
     if args.ego_dir:
         cmd.extend(["--ego-dir", _path(args.ego_dir)])
-    _append_repeat(cmd, "--ego-checkpoint", args.ego_checkpoint)
+    for checkpoint in args.ego_checkpoint or ():
+        cmd.extend(["--ego-checkpoint", _checkpoint_arg(args, checkpoint)])
     if args.output_dir:
         cmd.extend(["--output-dir", _path(args.output_dir)])
     if args.hdv_action:
@@ -208,9 +284,9 @@ def _append_adv_args(cmd: list[str], args: argparse.Namespace, config: Path, adv
 def run_adv(args: argparse.Namespace) -> None:
     root, config, adv_model_dir, joint_round_log = _shared_target_paths(args)
     script_path = _validate_target(root, "evaluate_finetuned_ego_against_adv.py")
-    cmd = [sys.executable, str(script_path), "--backend", args.backend]
+    cmd = [*_target_command(args, root, script_path), "--backend", args.backend]
     if args.ego_checkpoint:
-        cmd.extend(["--ego-checkpoint", _path(args.ego_checkpoint)])
+        cmd.extend(["--ego-checkpoint", _checkpoint_arg(args, args.ego_checkpoint)])
     if args.output_dir:
         cmd.extend(["--output-dir", _path(args.output_dir)])
     if args.base_dir:
@@ -225,14 +301,14 @@ def run_adv_sweep(args: argparse.Namespace) -> None:
     root, config, adv_model_dir, joint_round_log = _shared_target_paths(args)
     script_path = _validate_target(root, "run_ego_checkpoint_sweep_eval.py")
     cmd = [
-        sys.executable,
-        str(script_path),
+        *_target_command(args, root, script_path),
         "--ego-dir",
-        _path(args.ego_dir),
+        _checkpoint_dir_arg(args, args.ego_dir),
         "--checkpoint-interval",
         str(args.checkpoint_interval),
     ]
-    _append_repeat(cmd, "--ego-checkpoint", args.ego_checkpoint)
+    for checkpoint in args.ego_checkpoint or ():
+        cmd.extend(["--ego-checkpoint", _checkpoint_arg(args, checkpoint)])
     if args.output_dir:
         cmd.extend(["--output-dir", _path(args.output_dir)])
     _append_flag(cmd, "--include-final", args.include_final)
@@ -246,6 +322,15 @@ def _add_shared_root_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--backend", choices=["mock", "carla"], default="carla")
     parser.add_argument("--config", default="configs/carla_0915.yaml")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--ego-adapter", choices=["native", "safebench-ppo"], default="native")
+    parser.add_argument("--safebench-agent-cfg", default="ppo.yaml")
+    parser.add_argument(
+        "--safebench-obs-indices",
+        default="",
+        help="Comma-separated indices from CARLA Evolution ego obs to feed SafeBench PPO. Default: first 4 values.",
+    )
+    parser.add_argument("--safebench-steer-threshold", type=float, default=0.1)
+    parser.add_argument("--safebench-acc-threshold", type=float, default=0.5)
 
 
 def _add_shared_scene_args(parser: argparse.ArgumentParser) -> None:

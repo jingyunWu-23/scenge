@@ -158,6 +158,24 @@ python scripts/eval_carla_evolution.py adv \
     --ego-checkpoint /path/to/ego/checkpoint.pt
 ```
 
+If the ego policy is a SafeBench PPO `.torch` checkpoint, use the adapter mode:
+
+```bash
+python scripts/eval_carla_evolution.py normal \
+    --ego-adapter safebench-ppo \
+    --ego-checkpoint /path/to/safebench_ppo_model.torch
+
+python scripts/eval_carla_evolution.py adv \
+    --ego-adapter safebench-ppo \
+    --ego-checkpoint /path/to/safebench_ppo_model.torch
+```
+
+The adapter loads the PPO config from `safebench/agent/config/ppo.yaml`, feeds
+the first four CARLA Evolution ego-observation values into the SafeBench PPO by
+default, and maps continuous `[acceleration, steer]` outputs into the five
+CARLA Evolution discrete ego actions. Override the observation mapping with
+`--safebench-obs-indices`, for example `--safebench-obs-indices 0,1,2,3`.
+
 For a directory of ego checkpoints:
 
 ```bash
