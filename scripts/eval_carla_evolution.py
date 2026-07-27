@@ -47,6 +47,13 @@ def _path(value: str | Path) -> str:
     return str(Path(value).expanduser())
 
 
+def _output_dir_arg(value: str | Path) -> str:
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        path = REPO_ROOT / path
+    return str(path)
+
+
 def _append_flag(cmd: list[str], flag: str, enabled: bool) -> None:
     if enabled:
         cmd.append(flag)
@@ -245,7 +252,7 @@ def run_normal(args: argparse.Namespace) -> None:
     for checkpoint in args.ego_checkpoint or ():
         cmd.extend(["--ego-checkpoint", _checkpoint_arg(args, checkpoint)])
     if args.output_dir:
-        cmd.extend(["--output-dir", _path(args.output_dir)])
+        cmd.extend(["--output-dir", _output_dir_arg(args.output_dir)])
     if args.hdv_action:
         cmd.extend(["--hdv-action", args.hdv_action])
     if args.hdv_model:
@@ -288,7 +295,7 @@ def run_adv(args: argparse.Namespace) -> None:
     if args.ego_checkpoint:
         cmd.extend(["--ego-checkpoint", _checkpoint_arg(args, args.ego_checkpoint)])
     if args.output_dir:
-        cmd.extend(["--output-dir", _path(args.output_dir)])
+        cmd.extend(["--output-dir", _output_dir_arg(args.output_dir)])
     if args.base_dir:
         cmd.extend(["--base-dir", _path(args.base_dir)])
     _append_repeat(cmd, "--ego-search-dir", args.ego_search_dir)
@@ -310,7 +317,7 @@ def run_adv_sweep(args: argparse.Namespace) -> None:
     for checkpoint in args.ego_checkpoint or ():
         cmd.extend(["--ego-checkpoint", _checkpoint_arg(args, checkpoint)])
     if args.output_dir:
-        cmd.extend(["--output-dir", _path(args.output_dir)])
+        cmd.extend(["--output-dir", _output_dir_arg(args.output_dir)])
     _append_flag(cmd, "--include-final", args.include_final)
     _append_flag(cmd, "--label-with-source", args.label_with_source)
     _append_adv_args(cmd, args, config, adv_model_dir, joint_round_log)
