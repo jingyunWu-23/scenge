@@ -23,7 +23,14 @@ def main() -> None:
 
     carla_root = Path(args.carla_evolution_root).expanduser().resolve()
     target_script = Path(args.target_script).expanduser().resolve()
-    for path in (str(REPO_ROOT), str(carla_root), str(carla_root / "scripts")):
+    for path in (
+        str(REPO_ROOT),
+        str(REPO_ROOT / "MARL1"),
+        str(carla_root),
+        str(carla_root / "scripts"),
+        str(carla_root.parent / "MARL1"),
+        str(carla_root / "MARL1"),
+    ):
         if path not in sys.path:
             sys.path.insert(0, path)
     if "carla_evolution" not in sys.modules:
@@ -36,6 +43,10 @@ def main() -> None:
 
     if args.ego_adapter == "safebench-ppo":
         from safebench.scenge.carla_evolution_ego_adapter import SafeBenchPPOToDiscreteAdapter
+
+        ego_ppo_module = types.ModuleType("carla_evolution.agents.ego_ppo")
+        ego_ppo_module.EgoPPOAdapter = SafeBenchPPOToDiscreteAdapter
+        sys.modules["carla_evolution.agents.ego_ppo"] = ego_ppo_module
 
         def patched_runtime_imports():
             from carla_evolution.agents.mappo import MAPPOAgent
