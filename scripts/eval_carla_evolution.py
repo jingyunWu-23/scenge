@@ -357,16 +357,21 @@ def run_adv_sweep(args: argparse.Namespace) -> None:
 
 
 def run_safebench_lc(args: argparse.Namespace) -> None:
-    root, _ = _target_root_and_config(args)
-    script_path = root / "tests" / "scripts" / "run_safebench_lc_ego_sweep_eval.py"
+    root, config = _target_root_and_config(args)
+    script_path = root / "tests" / "scripts" / "run_safebench_inspired_carla_ego_sweep.py"
+    adv_model_dir = Path(args.adv_model_dir).expanduser()
+    if not adv_model_dir.is_absolute():
+        adv_model_dir = root / adv_model_dir
     missing = [
         path
         for path in (
             root,
             script_path,
-            root / "tests" / "configs" / "adv_init_state.json",
-            root / "tests" / "envs" / "scene_state.py",
-            root / "tests" / "scenarios" / "templates" / "straight_follow.py",
+            root / "tests" / "configs" / "advsim.json",
+            root / "scripts" / "finetune_ego_enhanced_poet.py",
+            root / "scripts" / "evaluate_ego_adv.py",
+            root / "envs" / "env.py",
+            root / "agents" / "mappo.py",
         )
         if not path.exists()
     ]
@@ -386,6 +391,8 @@ def run_safebench_lc(args: argparse.Namespace) -> None:
         args.model_label,
         "--finetune-ego-checkpoints",
         "none",
+        "--config",
+        str(config),
         "--scenario-type-json",
         str(scenario_type_json),
         "--scenario-ids",
@@ -396,21 +403,36 @@ def run_safebench_lc(args: argparse.Namespace) -> None:
         str(args.max_routes_per_scenario),
         "--max-inits-per-route",
         str(args.max_inits_per_route),
+        "--adv-model-dir",
+        str(adv_model_dir),
+        "--adv-step",
+        str(args.adv_step),
+        "--num-adv",
+        str(args.num_adv),
+        "--num-natural",
+        str(args.num_natural),
+        "--hdv-action",
+        args.hdv_action,
         "--max-steps",
         str(args.max_steps),
         "--route-length",
         str(args.route_length),
-        "--dt",
-        str(args.dt),
+        "--target-speed-cruise",
+        str(args.target_speed_cruise),
         "--seed",
         str(args.seed),
-        "--target-speed",
-        str(args.target_speed),
+        "--torch-seed",
+        str(args.torch_seed),
+        "--carla-rpc-timeout",
+        str(args.carla_rpc_timeout),
+        "--cleanup-destroy-mode",
+        args.cleanup_destroy_mode,
         "--output-dir",
         _output_dir_arg(args.output_dir),
     ]
     _append_flag(cmd, "--no-cuda", args.no_cuda)
     _append_flag(cmd, "--render", args.render)
+    _append_flag(cmd, "--purge-existing-actors-on-reset", args.purge_existing_actors_on_reset)
     _append_flag(cmd, "--dry-run", args.dry_run_lc)
     _run(cmd, root, _base_env(args, root), args.dry_run)
 
@@ -540,28 +562,36 @@ def build_parser() -> argparse.ArgumentParser:
 
     safebench_lc = subparsers.add_parser(
         "safebench-lc",
-        help="Evaluate one SafeBench PPO ego checkpoint on the four SafeBench LC template scenarios.",
+        help="Evaluate one ego checkpoint on the four straight-road LC templates: follow, passing, lane_change, cut_in.",
     )
     _add_shared_root_args(safebench_lc)
     safebench_lc.set_defaults(ego_adapter="safebench-ppo")
     safebench_lc.add_argument("--ego-checkpoint", required=True)
     safebench_lc.add_argument("--model-label", default="SafeBench-PPO")
-    safebench_lc.add_argument("--scenario-type-json", default="tests/configs/adv_init_state.json")
+    safebench_lc.add_argument("--scenario-type-json", default="tests/configs/advsim.json")
     safebench_lc.add_argument("--scenario-ids", default="1,2,3,4")
     safebench_lc.add_argument("--route-ids", default="")
-    safebench_lc.add_argument("--max-routes-per-scenario", type=int, default=0)
+    safebench_lc.add_argument("--max-routes-per-scenario", type=int, default=10)
     safebench_lc.add_argument("--max-inits-per-route", type=int, default=10)
+    safebench_lc.add_argument("--adv-model-dir", default=f"results/{DEFAULT_ADV_RUN}/models/adv")
+    safebench_lc.add_argument("--adv-step", type=int, default=0)
+    safebench_lc.add_argument("--num-adv", type=int, default=DEFAULT_NUM_ADV)
+    safebench_lc.add_argument("--num-natural", type=int, default=0)
+    safebench_lc.add_argument("--hdv-action", default="keep_lane")
     safebench_lc.add_argument("--max-steps", type=int, default=200)
     safebench_lc.add_argument("--route-length", type=float, default=200.0)
-    safebench_lc.add_argument("--dt", type=float, default=0.05)
+    safebench_lc.add_argument("--target-speed-cruise", type=float, default=20.0)
     safebench_lc.add_argument("--seed", type=int, default=669)
-    safebench_lc.add_argument("--target-speed", type=float, default=18.0)
+    safebench_lc.add_argument("--torch-seed", type=int, default=669)
+    safebench_lc.add_argument("--carla-rpc-timeout", type=float, default=300.0)
+    safebench_lc.add_argument("--cleanup-destroy-mode", choices=["sequential", "batch"], default="sequential")
     safebench_lc.add_argument("--render", action="store_true")
     safebench_lc.add_argument("--no-cuda", action="store_true")
+    safebench_lc.add_argument("--purge-existing-actors-on-reset", action="store_true")
     safebench_lc.add_argument("--dry-run-lc", action="store_true")
     safebench_lc.add_argument(
         "--output-dir",
-        default="results/safebench_lc_4scenes/ppo_torch",
+        default="results/safebench_inspired_carla_4scenes/ppo_torch",
     )
     safebench_lc.set_defaults(func=run_safebench_lc)
     return parser
