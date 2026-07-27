@@ -115,16 +115,14 @@ def _checkpoint_dir_from_checkpoints(paths: Sequence[str] | None) -> str | None:
     link_dir = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter" / "explicit_checkpoints"
     link_dir.mkdir(parents=True, exist_ok=True)
     for source in torch_files:
-        _adapt_checkpoint_path(source)
         digest = int(hashlib.sha1(str(source).encode("utf-8")).hexdigest()[:12], 16)
         link = link_dir / f"checkpoint-{digest}.pt"
-        target = REPO_ROOT / ".cache" / "carla_evolution_ego_adapter" / f"checkpoint-{digest}.pt"
         if link.exists() or link.is_symlink():
-            if link.resolve() != target.resolve():
+            if link.resolve() != source:
                 link.unlink()
         if not link.exists():
             try:
-                link.symlink_to(target)
+                link.symlink_to(source)
             except FileExistsError:
                 pass
     return str(link_dir)
@@ -275,8 +273,9 @@ def run_normal(args: argparse.Namespace) -> None:
         ego_dir = _checkpoint_dir_from_checkpoints(args.ego_checkpoint)
     if ego_dir:
         cmd.extend(["--ego-dir", ego_dir])
-    for checkpoint in args.ego_checkpoint or ():
-        cmd.extend(["--ego-checkpoint", _checkpoint_arg(args, checkpoint)])
+    if args.ego_adapter != "safebench-ppo":
+        for checkpoint in args.ego_checkpoint or ():
+            cmd.extend(["--ego-checkpoint", _checkpoint_arg(args, checkpoint)])
     if args.output_dir:
         cmd.extend(["--output-dir", _output_dir_arg(args.output_dir)])
     if args.hdv_action:
