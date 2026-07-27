@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import importlib
 import runpy
 import sys
 import types
@@ -30,8 +31,10 @@ def main() -> None:
         package.__path__ = [str(carla_root)]
         sys.modules["carla_evolution"] = package
 
+    finetune = importlib.import_module("carla_evolution.scripts.finetune_ego_enhanced_poet")
+    sys.modules.setdefault("finetune_ego_enhanced_poet", finetune)
+
     if args.ego_adapter == "safebench-ppo":
-        import finetune_ego_enhanced_poet as finetune
         from safebench.scenge.carla_evolution_ego_adapter import SafeBenchPPOToDiscreteAdapter
 
         original_runtime_imports = finetune.runtime_imports
