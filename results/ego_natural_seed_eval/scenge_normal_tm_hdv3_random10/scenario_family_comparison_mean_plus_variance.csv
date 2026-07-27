@@ -1,0 +1,2 @@
+model_group,model_label,checkpoint_step,scenario_family,episodes,Collision rate_mean_var,Road completion_mean_var,Driven distance_mean_var,Average speed_mean_var,Traffic efficiency_mean_var,Average reward_mean_var
+finetuned,Ego-188751578016257,188751578016257,passing,10,0.0000 ± 0.0000,0.3682 ± 0.0422,72.9034 ± 1655.6799,7.2805 ± 8.2726,0.2375 ± 0.0064,27.0727 ± 7240.5440

@@ -1,0 +1,11 @@
+adv_slots,adv_step,environment_id,generation_created,lane_offsets,mutation_type,near_count,num_adv,num_natural,offsets,parent_count,parent_environment_id,round,route_length,score,target_speed_cruise,template
+"[1, 2, 3]",8950,8950,0,"[1, 2, 0, 1]",initial,0,3,0,"[32.0, -38.0, 15.0, 75.0]",0,-1,43,200.0,0.0,20.0,slow_front_left_escape
+"[1, 2, 3]",9730,9730,0,"[1, 2, 0, 1]",initial,0,3,0,"[32.0, -38.0, 15.0, 75.0]",0,-1,47,200.0,0.0,20.0,slow_front_left_escape
+"[1, 2, 3]",10590,10590,0,"[1, 2, 0, 1]",initial,0,3,0,"[32.0, -38.0, 15.0, 75.0]",0,-1,52,200.0,0.0,20.0,slow_front_left_escape
+"[1, 2, 3]",12060,12060,0,"[1, 2, 0, 1]",initial,0,3,0,"[32.0, -38.0, 15.0, 75.0]",0,-1,62,200.0,0.0,20.0,slow_front_left_escape
+"[1, 2, 3]",12200,12200,0,"[1, 2, 0, 1]",initial,0,3,0,"[32.0, -38.0, 15.0, 75.0]",0,-1,63,200.0,0.0,20.0,slow_front_left_escape
+"[1, 2, 3]",13380,13380,0,"[1, 2, 0, 1]",initial,0,3,0,"[32.0, -38.0, 15.0, 75.0]",0,-1,71,200.0,0.0,20.0,slow_front_left_escape
+"[1, 2, 3]",14930,14930,0,"[1, 2, 0, 1]",initial,0,3,0,"[32.0, -38.0, 15.0, 75.0]",0,-1,81,200.0,0.0,20.0,slow_front_left_escape
+"[1, 2, 3]",15530,15530,0,"[1, 2, 0, 1]",initial,0,3,0,"[32.0, -38.0, 15.0, 75.0]",0,-1,85,200.0,0.0,20.0,slow_front_left_escape
+"[1, 2, 3]",16500,16500,0,"[1, 2, 0, 1]",initial,0,3,0,"[32.0, -38.0, 15.0, 75.0]",0,-1,91,200.0,0.0,20.0,slow_front_left_escape
+"[1, 2, 3]",17410,17410,0,"[1, 2, 0, 1]",initial,0,3,0,"[32.0, -38.0, 15.0, 75.0]",0,-1,98,200.0,0.0,20.0,slow_front_left_escape

@@ -1,0 +1,252 @@
+{
+  "ego_checkpoint": "/root/scenge/.cache/carla_evolution_ego_adapter/checkpoint-188751578016257.pt",
+  "adv_model_dir": "/root/scenge/a/results/joint_Jul_01_14_59_59/models/adv",
+  "joint_round_log": "/root/scenge/a/results/joint_Jul_01_14_59_59/joint_round_log.csv",
+  "sampling_mode": "round_log",
+  "adv_round_last": 60,
+  "adv_pool_last": 60,
+  "round_pool": {
+    "start_round": 41,
+    "end_round": 100,
+    "lower_step_exclusive": 8356,
+    "upper_step_inclusive": 17856,
+    "available_checkpoint_count": 10
+  },
+  "sampled_min_round": 43,
+  "sampled_max_round": 98,
+  "adv_pool_min_step": 8950,
+  "adv_pool_max_step": 17410,
+  "sampled_adv_rows": [
+    {
+      "round": 43,
+      "adv_step": 8950
+    },
+    {
+      "round": 47,
+      "adv_step": 9730
+    },
+    {
+      "round": 52,
+      "adv_step": 10590
+    },
+    {
+      "round": 62,
+      "adv_step": 12060
+    },
+    {
+      "round": 63,
+      "adv_step": 12200
+    },
+    {
+      "round": 71,
+      "adv_step": 13380
+    },
+    {
+      "round": 81,
+      "adv_step": 14930
+    },
+    {
+      "round": 85,
+      "adv_step": 15530
+    },
+    {
+      "round": 91,
+      "adv_step": 16500
+    },
+    {
+      "round": 98,
+      "adv_step": 17410
+    }
+  ],
+  "sampled_adv_steps": [
+    8950,
+    9730,
+    10590,
+    12060,
+    12200,
+    13380,
+    14930,
+    15530,
+    16500,
+    17410
+  ],
+  "eval_seeds": [
+    101,
+    102,
+    103
+  ],
+  "eval_episodes_per_adv": 10,
+  "eval_seed_base": 101,
+  "eval_seed_stride": 100000,
+  "seed_plan": {
+    "8950": [
+      101,
+      102,
+      103,
+      104,
+      105,
+      106,
+      107,
+      108,
+      109,
+      110
+    ],
+    "9730": [
+      100101,
+      100102,
+      100103,
+      100104,
+      100105,
+      100106,
+      100107,
+      100108,
+      100109,
+      100110
+    ],
+    "10590": [
+      200101,
+      200102,
+      200103,
+      200104,
+      200105,
+      200106,
+      200107,
+      200108,
+      200109,
+      200110
+    ],
+    "12060": [
+      300101,
+      300102,
+      300103,
+      300104,
+      300105,
+      300106,
+      300107,
+      300108,
+      300109,
+      300110
+    ],
+    "12200": [
+      400101,
+      400102,
+      400103,
+      400104,
+      400105,
+      400106,
+      400107,
+      400108,
+      400109,
+      400110
+    ],
+    "13380": [
+      500101,
+      500102,
+      500103,
+      500104,
+      500105,
+      500106,
+      500107,
+      500108,
+      500109,
+      500110
+    ],
+    "14930": [
+      600101,
+      600102,
+      600103,
+      600104,
+      600105,
+      600106,
+      600107,
+      600108,
+      600109,
+      600110
+    ],
+    "15530": [
+      700101,
+      700102,
+      700103,
+      700104,
+      700105,
+      700106,
+      700107,
+      700108,
+      700109,
+      700110
+    ],
+    "16500": [
+      800101,
+      800102,
+      800103,
+      800104,
+      800105,
+      800106,
+      800107,
+      800108,
+      800109,
+      800110
+    ],
+    "17410": [
+      900101,
+      900102,
+      900103,
+      900104,
+      900105,
+      900106,
+      900107,
+      900108,
+      900109,
+      900110
+    ]
+  },
+  "scenario_preset": "slow_front_left_escape",
+  "num_adv": 3,
+  "num_natural": 0,
+  "hdv_model": "",
+  "args": {
+    "backend": "carla",
+    "config": "/root/scenge/a/configs/carla_0915.yaml",
+    "output_dir": "/root/scenge/results/ego_adv_frozen_eval/scenge_adv10_random_pos_lane",
+    "base_dir": "/root/scenge/a/results/ego_adv_frozen_eval",
+    "ego_checkpoint": "/root/scenge/.cache/carla_evolution_ego_adapter/checkpoint-188751578016257.pt",
+    "ego_search_dir": null,
+    "adv_model_dir": "/root/scenge/a/results/joint_Jul_01_14_59_59/models/adv",
+    "joint_round_log": "/root/scenge/a/results/joint_Jul_01_14_59_59/joint_round_log.csv",
+    "adv_search_dir": null,
+    "adv_round_last": 60,
+    "adv_pool_last": 60,
+    "adv_sample_count": 10,
+    "sample_seed": 669,
+    "eval_seeds": "101,102,103",
+    "eval_episodes_per_adv": 10,
+    "eval_seed_base": 101,
+    "eval_seed_stride": 100000,
+    "scenario_preset": "slow_front_left_escape",
+    "max_steps": 200,
+    "num_adv": 3,
+    "num_natural": 0,
+    "spawn_start_index": 0,
+    "randomize_scenarios": true,
+    "relative_offset_jitter": 10.0,
+    "randomize_lane_offsets": true,
+    "randomize_lane_offset_min": 0,
+    "randomize_lane_offset_max": 2,
+    "randomize_spawn_start_index": false,
+    "shuffle_spawn_points": false,
+    "target_speed_cruise": null,
+    "route_length": null,
+    "hdv_model": "",
+    "hdv_action": "keep_lane",
+    "low_speed_alpha": 0.5,
+    "low_risk_threshold": 0.25,
+    "front_slow_alpha": 0.6,
+    "front_slow_gap": 35.0,
+    "torch_seed": 669,
+    "no_cuda": false,
+    "carla_rpc_timeout": 300.0,
+    "purge_existing_actors_on_reset": false,
+    "cleanup_destroy_mode": "sequential",
+    "render": false
+  }
+}
