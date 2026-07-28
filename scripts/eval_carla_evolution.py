@@ -188,6 +188,14 @@ def _run(cmd: Sequence[str], cwd: Path, env: dict[str, str], dry_run: bool) -> N
 
 def _base_env(args: argparse.Namespace, root: Path) -> dict[str, str]:
     env = os.environ.copy()
+    for key in (
+        "OMP_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+    ):
+        env.setdefault(key, "1")
     pythonpath = [str(root), str(REPO_ROOT)]
     if env.get("PYTHONPATH"):
         pythonpath.append(env["PYTHONPATH"])
@@ -571,7 +579,7 @@ def build_parser() -> argparse.ArgumentParser:
     safebench_lc.add_argument("--scenario-type-json", default="tests/configs/advsim.json")
     safebench_lc.add_argument("--scenario-ids", default="1,2,3,4")
     safebench_lc.add_argument("--route-ids", default="")
-    safebench_lc.add_argument("--max-routes-per-scenario", type=int, default=10)
+    safebench_lc.add_argument("--max-routes-per-scenario", type=int, default=4)
     safebench_lc.add_argument("--max-inits-per-route", type=int, default=10)
     safebench_lc.add_argument("--adv-model-dir", default=f"results/{DEFAULT_ADV_RUN}/models/adv")
     safebench_lc.add_argument("--adv-step", type=int, default=0)
