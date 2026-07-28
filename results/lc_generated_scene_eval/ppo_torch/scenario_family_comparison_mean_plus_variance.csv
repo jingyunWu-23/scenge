@@ -1,0 +1,5 @@
+Average reward_mean_var,Average speed_mean_var,Collision rate_mean_var,Driven distance_mean_var,Road completion_mean_var,Traffic efficiency_mean_var,checkpoint_step,episodes,model_group,model_label,scenario_family
+4016.2500 ± 0.0000,22.9500 ± 0.0000,0.0000 ± 0.0000,200.8125 ± 0.0000,1.0000 ± 0.0000,0.5752 ± 0.0000,188751578016257,200,training_final,ppo_torch,follow_straight
+2592.5323 ± 712951.3638,21.4453 ± 0.8839,0.8900 ± 0.0979,131.8516 ± 1743.8380,0.6588 ± 0.0433,0.4510 ± 0.0058,188751578016257,200,training_final,ppo_torch,passing
+1688.7415 ± 1656845.4651,20.3089 ± 2.4620,0.9150 ± 0.0778,86.7246 ± 4093.1402,0.4333 ± 0.1019,0.3664 ± 0.0141,188751578016257,200,training_final,ppo_torch,lane_change
+3592.1306 ± 729227.1568,22.4951 ± 0.8606,0.2250 ± 0.1744,180.1690 ± 1741.9846,0.8977 ± 0.0429,0.5379 ± 0.0057,188751578016257,200,training_final,ppo_torch,cut_in
