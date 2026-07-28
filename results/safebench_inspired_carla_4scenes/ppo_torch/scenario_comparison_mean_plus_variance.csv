@@ -1,0 +1,5 @@
+model_group,model_label,checkpoint_step,scenario_id,scenario_name,safebench_scenario_name,episodes,Road completion_mean_var,Ego crash rate_mean_var,Traffic efficiency_mean_var,Ego reward_mean_var,Average reward_mean_var,Average speed_mean_var,Driven distance_mean_var
+training_final,ppo_torch,188751578016257,1,scenario_01,DynamicObjectCrossing,40,0.8965 ± 0.0347,0.2500 ± 0.1875,0.5376 ± 0.0046,3585.4933 ± 597638.7436,3585.4933 ± 597638.7436,22.4965 ± 0.6712,179.8997 ± 1414.5018
+training_final,ppo_torch,188751578016257,2,scenario_02,VehicleTurningRoute,40,0.8849 ± 0.0401,0.2500 ± 0.1875,0.5334 ± 0.0053,3539.4330 ± 688671.7172,3539.4330 ± 688671.7172,22.4445 ± 0.7760,177.5966 ± 1633.4480
+training_final,ppo_torch,188751578016257,3,scenario_03,OtherLeadingVehicle,40,0.8858 ± 0.0411,0.2500 ± 0.1875,0.5337 ± 0.0054,3543.0484 ± 704035.9367,3543.0484 ± 704035.9367,22.4473 ± 0.8022,177.7774 ± 1672.5364
+training_final,ppo_torch,188751578016257,4,scenario_04,ManeuverOppositeDirection,40,0.9002 ± 0.0340,0.2500 ± 0.1875,0.5389 ± 0.0045,3600.6667 ± 584065.1341,3600.6667 ± 584065.1341,22.5127 ± 0.6616,180.6583 ± 1383.4128
