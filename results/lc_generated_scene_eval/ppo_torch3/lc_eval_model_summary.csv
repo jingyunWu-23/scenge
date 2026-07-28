@@ -1,0 +1,2 @@
+collision_rate,ego_model,episodes,mean_average_speed,mean_low_speed_ratio,mean_progress_auc,mean_reward,mean_route_completion,success_rate
+0.5075,ppo_torch,800,21.799828124999905,0.0,0.3532663113839274,2972.413624999985,0.747441296874999,0.49375
