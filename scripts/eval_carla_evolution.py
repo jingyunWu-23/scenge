@@ -491,6 +491,92 @@ def run_lc_eval(args: argparse.Namespace) -> None:
     _run(cmd, root, _base_env(args, root), args.dry_run)
 
 
+def run_lc_generate_scenes(args: argparse.Namespace) -> None:
+    root, _ = _target_root_and_config(args)
+    script_path = root / "tests" / "scripts" / "train_lc_straight_templates.py"
+    missing = [
+        path
+        for path in (
+            root,
+            script_path,
+            root / "tests" / "envs" / "scene_state.py",
+            root / "tests" / "scenarios" / "parameter_space.py",
+        )
+        if not path.exists()
+    ]
+    if missing:
+        formatted = "\n  ".join(str(path) for path in missing)
+        raise SystemExit(f"Missing required LC generation files:\n  {formatted}")
+    output_dir = Path(_output_dir_arg(args.output_dir))
+    template_names = [item.strip() for item in str(args.template_names).split(",") if item.strip()]
+    generated_csvs = []
+    for index, template_name in enumerate(template_names):
+        template_dir = output_dir / template_name / "train"
+        cmd = [
+            sys.executable,
+            str(script_path),
+            "--template-name",
+            template_name,
+            "--episodes",
+            str(args.episodes_per_template),
+            "--max-steps",
+            str(args.max_steps),
+            "--route-length",
+            str(args.route_length),
+            "--dt",
+            str(args.dt),
+            "--seed",
+            str(int(args.seed) + index * 100000),
+            "--target-speed",
+            str(args.target_speed),
+            "--ego-action",
+            args.ego_action,
+            "--batch-size",
+            str(args.batch_size),
+            "--buffer-capacity",
+            str(args.buffer_capacity),
+            "--lr",
+            str(args.lr),
+            "--entropy-weight",
+            str(args.entropy_weight),
+            "--save-interval",
+            str(args.save_interval),
+            "--output-dir",
+            str(template_dir),
+        ]
+        _append_flag(cmd, "--no-cuda", args.no_cuda)
+        _run(cmd, root, _base_env(args, root), args.dry_run)
+        generated_csvs.append(template_dir / "decoded_scene_params.csv")
+    if not args.dry_run:
+        combined_csv = output_dir / "decoded_scene_params.csv"
+        _combine_lc_scene_csvs(generated_csvs, combined_csv)
+        print(f"Combined LC scene params: {combined_csv}", flush=True)
+
+
+def _combine_lc_scene_csvs(source_paths: Sequence[Path], output_path: Path) -> None:
+    import csv
+
+    rows = []
+    fieldnames = []
+    for source_path in source_paths:
+        with source_path.open("r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for field in reader.fieldnames or ():
+                if field not in fieldnames:
+                    fieldnames.append(field)
+            for row in reader:
+                rows.append(row)
+    if "episode" not in fieldnames:
+        fieldnames.insert(0, "episode")
+    for episode, row in enumerate(rows, start=1):
+        row["episode"] = str(episode)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def _add_shared_root_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--carla-evolution-root", default=str(DEFAULT_CARLA_EVOLUTION_ROOT))
     parser.add_argument("--backend", choices=["mock", "carla"], default="carla")
@@ -674,6 +760,29 @@ def build_parser() -> argparse.ArgumentParser:
         default="results/lc_generated_scene_eval/ppo_torch",
     )
     lc_eval.set_defaults(func=run_lc_eval)
+
+    lc_generate = subparsers.add_parser(
+        "lc-generate-scenes",
+        help="Train/sample LC policies for the four straight-road templates and write a combined decoded_scene_params.csv.",
+    )
+    _add_shared_root_args(lc_generate)
+    lc_generate.set_defaults(ego_adapter="native")
+    lc_generate.add_argument("--template-names", default="straight_follow,passing,lane_change,cut_in")
+    lc_generate.add_argument("--episodes-per-template", type=int, default=100)
+    lc_generate.add_argument("--max-steps", type=int, default=200)
+    lc_generate.add_argument("--route-length", type=float, default=200.0)
+    lc_generate.add_argument("--dt", type=float, default=0.05)
+    lc_generate.add_argument("--seed", type=int, default=669)
+    lc_generate.add_argument("--target-speed", type=float, default=18.0)
+    lc_generate.add_argument("--ego-action", choices=["keep_lane", "accelerate", "decelerate"], default="accelerate")
+    lc_generate.add_argument("--batch-size", type=int, default=32)
+    lc_generate.add_argument("--buffer-capacity", type=int, default=1000)
+    lc_generate.add_argument("--lr", type=float, default=1e-3)
+    lc_generate.add_argument("--entropy-weight", type=float, default=1e-4)
+    lc_generate.add_argument("--save-interval", type=int, default=50)
+    lc_generate.add_argument("--no-cuda", action="store_true")
+    lc_generate.add_argument("--output-dir", default="results/lc_generated_scenes/4templates_ep100")
+    lc_generate.set_defaults(func=run_lc_generate_scenes)
     return parser
 
 
