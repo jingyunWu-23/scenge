@@ -1,0 +1,23 @@
+{
+  "training_ego_checkpoint": "/root/scenge/.cache/carla_evolution_ego_adapter/checkpoint-188751578016257.pt",
+  "finetune_ego_dir": "/root/scenge/a/results/ego_enhanced_poet_finetune/poet_finetune_Jul_21_13_29_28-30-10/models/ego",
+  "checkpoint_interval": 100,
+  "include_final": true,
+  "scenario_type_json": "/root/scenge/a/tests/configs/adv_init_state.json",
+  "scenario_ids": "1,2,3,4",
+  "route_ids": "",
+  "max_routes_per_scenario": 10,
+  "max_inits_per_route": 10,
+  "max_steps": 200,
+  "route_length": 200.0,
+  "dt": 0.05,
+  "seed": 669,
+  "ego_models": [
+    {
+      "label": "ppo_torch",
+      "checkpoint": "/root/scenge/.cache/carla_evolution_ego_adapter/checkpoint-188751578016257.pt",
+      "group": "training_final"
+    }
+  ],
+  "case_count": 160
+}

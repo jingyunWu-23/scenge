@@ -1,0 +1,2 @@
+model_group,model_label,checkpoint_step,scenario_count,episode_count,Road completion_mean_var,Ego crash rate_mean_var,Traffic efficiency_mean_var,Ego reward_mean_var,Average reward_mean_var,Average speed_mean_var,Driven distance_mean_var
+training_final,ppo_torch,188751578016257,4,160,0.8919 ± 0.0375,0.2500 ± 0.1875,0.5359 ± 0.0050,3567.1604 ± 643602.8829,3567.1604 ± 643602.8829,22.4752 ± 0.7278,178.9830 ± 1525.9748
