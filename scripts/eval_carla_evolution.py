@@ -435,6 +435,8 @@ def run_safebench_lc(args: argparse.Namespace) -> None:
         str(args.carla_rpc_timeout),
         "--cleanup-destroy-mode",
         args.cleanup_destroy_mode,
+        "--case-cooldown",
+        str(args.case_cooldown),
         "--output-dir",
         _output_dir_arg(args.output_dir),
     ]
@@ -577,9 +579,9 @@ def build_parser() -> argparse.ArgumentParser:
     safebench_lc.add_argument("--ego-checkpoint", required=True)
     safebench_lc.add_argument("--model-label", default="SafeBench-PPO")
     safebench_lc.add_argument("--scenario-type-json", default="tests/configs/advsim.json")
-    safebench_lc.add_argument("--scenario-ids", default="2")
-    safebench_lc.add_argument("--route-ids", default="4,5,6,7")
-    safebench_lc.add_argument("--max-routes-per-scenario", type=int, default=4)
+    safebench_lc.add_argument("--scenario-ids", default="1,2,3,4")
+    safebench_lc.add_argument("--route-ids", default="")
+    safebench_lc.add_argument("--max-routes-per-scenario", type=int, default=10)
     safebench_lc.add_argument("--max-inits-per-route", type=int, default=10)
     safebench_lc.add_argument("--adv-model-dir", default=f"results/{DEFAULT_ADV_RUN}/models/adv")
     safebench_lc.add_argument("--adv-step", type=int, default=0)
@@ -593,6 +595,7 @@ def build_parser() -> argparse.ArgumentParser:
     safebench_lc.add_argument("--torch-seed", type=int, default=669)
     safebench_lc.add_argument("--carla-rpc-timeout", type=float, default=300.0)
     safebench_lc.add_argument("--cleanup-destroy-mode", choices=["sequential", "batch"], default="sequential")
+    safebench_lc.add_argument("--case-cooldown", type=float, default=0.2)
     safebench_lc.add_argument("--render", action="store_true")
     safebench_lc.add_argument("--no-cuda", action="store_true")
     safebench_lc.add_argument("--purge-existing-actors-on-reset", action="store_true")

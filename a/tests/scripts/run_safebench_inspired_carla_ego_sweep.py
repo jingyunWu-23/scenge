@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gc
 import json
 import re
 import sys
+import time
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
@@ -114,6 +116,7 @@ def parse_args():
     parser.add_argument("--carla-rpc-timeout", type=float, default=180.0)
     parser.add_argument("--purge-existing-actors-on-reset", action="store_true", default=False)
     parser.add_argument("--cleanup-destroy-mode", choices=["sequential", "batch"], default="sequential")
+    parser.add_argument("--case-cooldown", type=float, default=0.2, help="Seconds to pause after closing each CARLA case.")
     parser.add_argument("--render", action="store_true", default=False)
     parser.add_argument("--output-dir", default="")
     parser.add_argument("--summarize-only", action="store_true", default=False)
@@ -597,6 +600,9 @@ def main():
                 )
         finally:
             env.close()
+            gc.collect()
+            if float(args.case_cooldown) > 0.0:
+                time.sleep(float(args.case_cooldown))
         write_csv(output_dir / "combined_episode_log.csv", all_rows)
     write_csv(output_dir / "resolved_cases.csv", case_rows)
     manifest = {
