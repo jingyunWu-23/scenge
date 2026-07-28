@@ -21,6 +21,7 @@ if str(PACKAGE_PARENT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_PARENT))
 
 from envs.action_adapter import ActionAdapter, DiscreteDrivingAction
+from envs.reward import CatSafetyEgoReward
 from tests.envs.observation_adapters import OurEgo25DObservationAdapter
 from tests.scenarios.parameter_space import StraightFollowParameterSpace
 from tests.scenarios.reinforce_continuous import LCReinforcePolicy
@@ -200,6 +201,8 @@ def run_episode(template, scene_spec: Dict, ego_policy, ego_action: int, args, a
     decoded_params = dict(scene_spec["decoded_params"])
     scene = template.reset(decoded_params, seed=int(scene_spec["seed"]))
     obs_adapter = OurEgo25DObservationAdapter(max_lanes=template.max_lanes)
+    ego_reward_fn = CatSafetyEgoReward()
+    ego_reward_fn.reset()
     episode_reward = 0.0
     stats = init_episode_stats()
     collision = False
@@ -223,10 +226,13 @@ def run_episode(template, scene_spec: Dict, ego_policy, ego_action: int, args, a
         collision = detect_collision(scene.vehicles)
         scene.events.collision = bool(collision)
         success = bool(scene.route_completion >= 1.0)
+        scene.crash = bool(collision)
+        scene.success = bool(success)
+        scene.timeout = False
         update_stats(stats, scene)
 
-        step_reward = float(scene.ego_vehicle.speed) - (50.0 if collision else 0.0)
-        episode_reward += step_reward
+        ego_reward, _ = ego_reward_fn.compute(scene)
+        episode_reward += float(ego_reward)
         if collision:
             termination_reason = "collision"
             break
