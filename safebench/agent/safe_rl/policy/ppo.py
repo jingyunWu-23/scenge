@@ -227,6 +227,9 @@ class PPO(Policy):
                 self.critic_optimizer.load_state_dict(
                     checkpoint["critic_optimizer_state_dict"]
                 )
+        elif isinstance(checkpoint, dict) and "policy" in checkpoint and "value" in checkpoint:
+            self.actor.load_state_dict(checkpoint["policy"])
+            self.critic.load_state_dict(checkpoint["value"])
         else:
             actor_state_dict, critic_state_dict = checkpoint
             self.actor.load_state_dict(actor_state_dict)
