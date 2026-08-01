@@ -20,6 +20,7 @@ if str(PACKAGE_PARENT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_PARENT))
 
 from envs.action_adapter import ActionAdapter, DiscreteDrivingAction
+from envs.reward import CatSafetyEgoReward
 from tests.envs.replay_buffer import LCReplayBuffer
 from tests.envs.observation_adapters import OurEgo25DObservationAdapter
 from tests.scenarios.parameter_space import StraightFollowParameterSpace
@@ -107,6 +108,9 @@ def run_episode(template, decoded_params, lc_action, args, seed: int, action_ada
     scene = template.reset(decoded_params, seed=seed)
     obs_adapter = OurEgo25DObservationAdapter(max_lanes=template.max_lanes)
     ego_action = ego_action_id(args.ego_action)
+    ego_reward_fn = CatSafetyEgoReward() if ego_policy is not None else None
+    if ego_reward_fn is not None:
+        ego_reward_fn.reset()
     episode_reward = 0.0
     stats = init_episode_stats()
     collision = False
@@ -130,12 +134,17 @@ def run_episode(template, decoded_params, lc_action, args, seed: int, action_ada
         collision = detect_collision(scene.vehicles)
         scene.events.collision = bool(collision)
         success = bool(scene.route_completion >= 1.0)
+        scene.crash = bool(collision)
+        scene.success = bool(success)
+        scene.timeout = False
         update_stats(stats, scene)
 
-        # LC keeps SafeBench's objective through a negative episode reward;
-        # this ego reward is a lightweight test reward for the straight rollout.
-        step_reward = float(scene.ego_vehicle.speed) - (50.0 if collision else 0.0)
-        episode_reward += step_reward
+        if ego_reward_fn is None:
+            # Backward-compatible proxy when training LC against a fixed ego action.
+            step_reward = float(scene.ego_vehicle.speed) - (50.0 if collision else 0.0)
+        else:
+            step_reward, _ = ego_reward_fn.compute(scene)
+        episode_reward += float(step_reward)
 
         if collision:
             termination_reason = "collision"
@@ -159,6 +168,7 @@ def run_episode(template, decoded_params, lc_action, args, seed: int, action_ada
         "driven_distance": float(scene.route.ego_progress),
         "episode_steps": int(steps),
         "termination_reason": termination_reason,
+        "reward_source": "cat_safety_ego_reward" if ego_reward_fn is not None else "fixed_ego_proxy",
         "lc_action": list(np.asarray(lc_action, dtype=float)),
         "decoded_params": dict(decoded_params),
     }
@@ -282,6 +292,7 @@ def main():
             "progress_auc": metrics["progress_auc"],
             "episode_steps": metrics["episode_steps"],
             "termination_reason": metrics["termination_reason"],
+            "reward_source": metrics["reward_source"],
             "loss": train_result.get("loss", ""),
         }
         append_csv(train_log, row)

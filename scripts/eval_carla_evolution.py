@@ -512,9 +512,12 @@ def run_lc_generate_scenes(args: argparse.Namespace) -> None:
     generated_csvs = []
     for index, template_name in enumerate(template_names):
         template_dir = output_dir / template_name / "train"
-        cmd = [
-            sys.executable,
-            str(script_path),
+        if args.ego_adapter in {"safebench-ppo", "chatscene-ppo"}:
+            cmd = [*_target_command(args, root, script_path)]
+        else:
+            cmd = [sys.executable, str(script_path)]
+        cmd.extend(
+            [
             "--template-name",
             template_name,
             "--episodes",
@@ -543,7 +546,10 @@ def run_lc_generate_scenes(args: argparse.Namespace) -> None:
             str(args.save_interval),
             "--output-dir",
             str(template_dir),
-        ]
+            ]
+        )
+        if args.ego_checkpoint:
+            cmd.extend(["--ego-checkpoint", _checkpoint_arg(args, args.ego_checkpoint)])
         _append_flag(cmd, "--no-cuda", args.no_cuda)
         _run(cmd, root, _base_env(args, root), args.dry_run)
         generated_csvs.append(template_dir / "decoded_scene_params.csv")
@@ -775,6 +781,11 @@ def build_parser() -> argparse.ArgumentParser:
     lc_generate.add_argument("--seed", type=int, default=669)
     lc_generate.add_argument("--target-speed", type=float, default=18.0)
     lc_generate.add_argument("--ego-action", choices=["keep_lane", "accelerate", "decelerate"], default="accelerate")
+    lc_generate.add_argument(
+        "--ego-checkpoint",
+        default="",
+        help="Optional ego checkpoint. When set, LC is trained with -CatSafetyEgoReward against this ego policy.",
+    )
     lc_generate.add_argument("--batch-size", type=int, default=32)
     lc_generate.add_argument("--buffer-capacity", type=int, default=1000)
     lc_generate.add_argument("--lr", type=float, default=1e-3)
