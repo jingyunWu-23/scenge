@@ -1,0 +1,2 @@
+collision_rate,ego_model,episodes,mean_average_speed,mean_low_speed_ratio,mean_progress_auc,mean_reward,mean_route_completion,success_rate
+0.5325,chatscene_ppo,400,22.594405716038025,0.0,0.35640105210108397,156.19182475320176,0.7529299570312492,0.47
