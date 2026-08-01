@@ -10,6 +10,7 @@ from typing import Iterable
 
 import numpy as np
 import torch
+import torch.nn as nn
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +33,36 @@ def _ensure_policy_import_path() -> None:
 
 _ensure_policy_import_path()
 from safebench.agent.safe_rl.policy.ppo import PPO
+
+
+class ChatScenePolicyNetwork(nn.Module):
+    """Policy network used by ChatScene's legacy PPO checkpoints."""
+
+    def __init__(self, state_dim: int, action_dim: int):
+        super().__init__()
+        hidden_dim = 64
+        self.fc1 = nn.Linear(state_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc_mu = nn.Linear(hidden_dim, action_dim)
+        self.fc_std = nn.Linear(hidden_dim, action_dim)
+        self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
+        self.softplus = nn.Softplus()
+        self.min_val = 1e-8
+
+    def forward(self, x):
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        mu = self.tanh(self.fc_mu(x))
+        std = self.softplus(self.fc_std(x)) + self.min_val
+        return mu, std
+
+    def select_action(self, state, deterministic: bool):
+        with torch.no_grad():
+            mu, std = self.forward(state)
+            if deterministic:
+                return mu
+            return torch.normal(mu, std)
 
 
 class _AdapterLogger:
@@ -143,3 +174,67 @@ class SafeBenchPPOToDiscreteAdapter:
         if acc <= -self.acc_threshold:
             return 4
         return 1
+
+
+class ChatScenePPOToDiscreteAdapter(SafeBenchPPOToDiscreteAdapter):
+    """Expose ChatScene PPO checkpoints as CARLA Evolution ego policies."""
+
+    def __init__(self, state_dim: int, action_dim: int, config: dict | None = None):
+        config = config or {}
+        root = Path(config.get("repo_root") or os.environ.get("SCENGE_ROOT") or Path.cwd())
+        agent_cfg = config.get("agent_cfg") or os.environ.get("SAFEBENCH_EGO_AGENT_CFG", "ppo.yaml")
+        cfg_path = Path(agent_cfg).expanduser()
+        if not cfg_path.is_absolute():
+            cfg_path = root / "safebench" / "agent" / "config" / cfg_path
+        self.agent_config = _load_yaml(cfg_path)
+        if not os.environ.get("MODEL_DEVICE"):
+            use_cuda = bool(config.get("use_cuda", True)) and torch.cuda.is_available()
+            os.environ["MODEL_DEVICE"] = "cuda:0" if use_cuda else "cpu"
+
+        self.device = torch.device(os.environ.get("MODEL_DEVICE", "cpu"))
+        self.obs_dim = int(config.get("safebench_obs_dim") or self.agent_config.get("ego_state_dim", 4))
+        self.obs_indices = _parse_indices(
+            config.get("obs_indices") or os.environ.get("SAFEBENCH_EGO_OBS_INDICES"),
+            self.obs_dim,
+        )
+        self.steer_threshold = float(
+            config.get("steer_threshold")
+            or os.environ.get("SAFEBENCH_EGO_STEER_THRESHOLD", 0.1)
+        )
+        self.acc_threshold = float(
+            config.get("acc_threshold")
+            or os.environ.get("SAFEBENCH_EGO_ACC_THRESHOLD", 0.5)
+        )
+        self.flip_steer = str(
+            config.get("flip_steer") or os.environ.get("CHATSCENE_EGO_FLIP_STEER", "0")
+        ).lower() in {"1", "true", "yes", "on"}
+        self.policy = ChatScenePolicyNetwork(
+            self.obs_dim,
+            int(config.get("action_dim") or self.agent_config.get("ego_action_dim", 2)),
+        ).to(self.device)
+        self.policy.eval()
+
+    @classmethod
+    def from_config(cls, config: dict, state_dim: int, action_dim: int):
+        merged = dict(config or {})
+        merged.setdefault("repo_root", os.environ.get("SCENGE_ROOT"))
+        merged.setdefault("agent_cfg", os.environ.get("SAFEBENCH_EGO_AGENT_CFG", "ppo.yaml"))
+        return cls(state_dim=state_dim, action_dim=action_dim, config=merged)
+
+    def load(self, path: str):
+        checkpoint = torch.load(path, map_location=self.device)
+        if not isinstance(checkpoint, dict) or "policy" not in checkpoint:
+            raise ValueError(
+                "ChatScene PPO checkpoint must be a dict containing a 'policy' state_dict."
+            )
+        self.policy.load_state_dict(checkpoint["policy"])
+        self.policy.eval()
+
+    def select_action(self, state, deterministic: bool = False):
+        obs = torch.as_tensor(self._adapt_observation(state), dtype=torch.float32, device=self.device).unsqueeze(0)
+        action = self.policy.select_action(obs, deterministic=deterministic).squeeze(0).detach().cpu().numpy()
+        if len(action) >= 2 and self.flip_steer:
+            action = np.asarray(action, dtype=np.float32).copy()
+            action[1] = -action[1]
+        discrete = self._continuous_to_discrete(action)
+        return discrete, None, None

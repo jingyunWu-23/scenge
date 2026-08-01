@@ -17,7 +17,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--carla-evolution-root", required=True)
     parser.add_argument("--target-script", required=True)
-    parser.add_argument("--ego-adapter", choices=["native", "safebench-ppo"], default="safebench-ppo")
+    parser.add_argument("--ego-adapter", choices=["native", "safebench-ppo", "chatscene-ppo"], default="safebench-ppo")
     parser.add_argument("target_args", nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
@@ -41,11 +41,20 @@ def main() -> None:
     finetune = importlib.import_module("carla_evolution.scripts.finetune_ego_enhanced_poet")
     sys.modules.setdefault("finetune_ego_enhanced_poet", finetune)
 
-    if args.ego_adapter == "safebench-ppo":
-        from safebench.scenge.carla_evolution_ego_adapter import SafeBenchPPOToDiscreteAdapter
+    if args.ego_adapter in {"safebench-ppo", "chatscene-ppo"}:
+        from safebench.scenge.carla_evolution_ego_adapter import (
+            ChatScenePPOToDiscreteAdapter,
+            SafeBenchPPOToDiscreteAdapter,
+        )
+
+        adapter_cls = (
+            ChatScenePPOToDiscreteAdapter
+            if args.ego_adapter == "chatscene-ppo"
+            else SafeBenchPPOToDiscreteAdapter
+        )
 
         ego_ppo_module = types.ModuleType("carla_evolution.agents.ego_ppo")
-        ego_ppo_module.EgoPPOAdapter = SafeBenchPPOToDiscreteAdapter
+        ego_ppo_module.EgoPPOAdapter = adapter_cls
         sys.modules["carla_evolution.agents.ego_ppo"] = ego_ppo_module
 
         def patched_runtime_imports():
@@ -53,7 +62,7 @@ def main() -> None:
             from carla_evolution.envs.factory import make_env
             from carla_evolution.training import train as train_mod
 
-            return train_mod, MAPPOAgent, SafeBenchPPOToDiscreteAdapter, make_env
+            return train_mod, MAPPOAgent, adapter_cls, make_env
 
         finetune.runtime_imports = patched_runtime_imports
 

@@ -136,13 +136,13 @@ def _clear_checkpoint_files(directory: Path) -> None:
 
 
 def _checkpoint_arg(args: argparse.Namespace, path: str | Path) -> str:
-    if args.ego_adapter == "safebench-ppo":
+    if args.ego_adapter in {"safebench-ppo", "chatscene-ppo"}:
         return _adapt_checkpoint_path(path)
     return _path(path)
 
 
 def _checkpoint_dir_arg(args: argparse.Namespace, path: str | Path) -> str:
-    if args.ego_adapter == "safebench-ppo":
+    if args.ego_adapter in {"safebench-ppo", "chatscene-ppo"}:
         return _adapt_checkpoint_dir(path)
     return _path(path)
 
@@ -284,11 +284,11 @@ def run_normal(args: argparse.Namespace) -> None:
         str(args.hdv_tm_distance_to_leading_vehicle),
     ]
     ego_dir = _checkpoint_dir_arg(args, args.ego_dir) if args.ego_dir else None
-    if args.ego_adapter == "safebench-ppo" and not ego_dir:
+    if args.ego_adapter in {"safebench-ppo", "chatscene-ppo"} and not ego_dir:
         ego_dir = _checkpoint_dir_from_checkpoints(args.ego_checkpoint)
     if ego_dir:
         cmd.extend(["--ego-dir", ego_dir])
-    if args.ego_adapter != "safebench-ppo":
+    if args.ego_adapter not in {"safebench-ppo", "chatscene-ppo"}:
         for checkpoint in args.ego_checkpoint or ():
             cmd.extend(["--ego-checkpoint", _checkpoint_arg(args, checkpoint)])
     if args.output_dir:
@@ -582,7 +582,7 @@ def _add_shared_root_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--backend", choices=["mock", "carla"], default="carla")
     parser.add_argument("--config", default="configs/carla_0915.yaml")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--ego-adapter", choices=["native", "safebench-ppo"], default="native")
+    parser.add_argument("--ego-adapter", choices=["native", "safebench-ppo", "chatscene-ppo"], default="native")
     parser.add_argument("--safebench-agent-cfg", default="ppo.yaml")
     parser.add_argument(
         "--safebench-obs-indices",
